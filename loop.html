@@ -227,7 +227,7 @@
         icon:'🧩', title:'Skill',
         pct:84, label:'Step 4 — Skill',
         contextSaved:'Agent follows your branch/PR checklist instead of inventing steps each time.',
-        example:'ado-start-work-item SKILL.md\n→ wit_get_work_item\n→ apollo/ic-legacy/bug-48231-pairing-timeout\n→ baseline build',
+        example:'ado-start-work-item SKILL.md\n→ wit_get_work_item\n→ feature/bug-1234-pairing-timeout\n→ baseline build',
         items:[
           'Package the checklist: branch naming, link WI, build gate, PR readiness',
           'Agent follows ado-start-work-item / ado-finish-work-item instead of improvising',
@@ -241,7 +241,7 @@
         icon:'⚡', title:'Command',
         pct:96, label:'Step 5 — Command',
         contextSaved:'One line triggers the skill — azure-devops.mdc is already in every session.',
-        example:'$ /start-wi 48231\n$ /finish-wi\n$ /pr-triage   ← full ADO lifecycle',
+        example:'$ /start-wi 1234\n$ /finish-wi\n$ /pr-triage   ← full ADO lifecycle',
         items:[
           'Give the skill a memorable name: /start-wi, /finish-wi, /pr-triage',
           'Anyone on the team can now trigger the ADO lifecycle',

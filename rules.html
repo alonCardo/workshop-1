@@ -118,7 +118,7 @@
         </div>
 
         <div class="file-tree">
-          <div class="tree-header">📁 ~/.cursor/rules/always/ · Cardo_Products/.cursor/rules/</div>
+          <div class="tree-header">📁 ~/.cursor/rules/always/ · YourRepo/.cursor/rules/</div>
           <div class="tree-dir">└─ .cursor/rules/</div>
           <div style="padding-left:16px;color:var(--muted);font-size:11px;margin-bottom:4px">├─ always/ <span style="opacity:0.6">(user)</span></div>
           <div style="padding-left:32px">
@@ -127,8 +127,8 @@
           </div>
           <div style="padding-left:16px;color:var(--muted);font-size:11px;margin-bottom:4px">└─ <span style="opacity:0.6">(repo)</span></div>
           <div style="padding-left:32px">
-            <div class="tree-file" id="tf-1" onclick="selectFile(1)">qcc3095-platform.mdc</div>
-            <div class="tree-file" id="tf-3" onclick="selectFile(3)">bt-intercom-core.mdc</div>
+            <div class="tree-file" id="tf-1" onclick="selectFile(1)">mcu-platform.mdc</div>
+            <div class="tree-file" id="tf-3" onclick="selectFile(3)">bt-module.mdc</div>
           </div>
         </div>
 
@@ -197,7 +197,7 @@
           </div>
           <div class="form-field">
             <label class="form-label">What must NEVER happen?</label>
-            <textarea id="f-never" class="form-textarea" rows="2" placeholder="e.g. Never use C++, never modify ADK base, never edit generated files" oninput="saveField('neverRules',this.value); updateFillIndicator();"></textarea>
+            <textarea id="f-never" class="form-textarea" rows="2" placeholder="e.g. Never use C++, never modify vendor SDK, never edit generated files" oninput="saveField('neverRules',this.value); updateFillIndicator();"></textarea>
             <div class="field-actions">
               <button type="button" class="btn-field-action" onclick="useDefault('neverRules', document.getElementById('f-never'))">Use default</button>
               <button type="button" class="btn-field-action" onclick="clearField('neverRules', document.getElementById('f-never'))">Clear</button>
@@ -306,7 +306,7 @@
           [['tok-md','C99/C11 only. No C++ classes, templates, lambdas, '],['tok-str','new'],['tok-md','/'],['tok-str','delete'],['tok-md',', or C++ headers.']],
           [],
           [['tok-head','## Naming Conventions']],
-          [['tok-md','Functions/variables: '],['tok-str','snake_case'],['tok-md',' with module prefix ('],['tok-str','bt_ic_'],['tok-md',', '],['tok-str','ic_sena_'],['tok-md',').']],
+          [['tok-md','Functions/variables: '],['tok-str','snake_case'],['tok-md',' with module prefix (e.g. '],['tok-str','audio_'],['tok-md',', '],['tok-str','proto_'],['tok-md',').']],
           [['tok-md','Macros/constants: '],['tok-str','UPPER_CASE'],['tok-md','. Internal functions: '],['tok-str','static'],['tok-md','.']],
           [],
           [['tok-head','## Code Structure']],
@@ -315,36 +315,36 @@
           [],
           [['tok-head','## Workflow Constraints']],
           [['tok-err','Never'],['tok-md',' make commits — user handles version control.']],
-          [['tok-err','Never'],['tok-md',' modify ADK base code — extend via application only.']],
+          [['tok-err','Never'],['tok-md',' modify vendor SDK code — extend via application only.']],
           [['tok-md','Always build to verify before considering a step done.']],
         ]
       },
       {
         label: 'auto',
-        fname: 'qcc3095-platform.mdc',
+        fname: 'mcu-platform.mdc',
         code: [
           [['tok-dim','---']],
-          [['tok-key','description'],['tok-dim',': '],['tok-val','QCC3095 platform — ADK, FreeRTOS, CM library (Cardo_Products/.cursor/rules/)']],
-          [['tok-key','globs'],['tok-dim',':       '],['tok-str','qcc3095/**/*.c, qcc3095/**/*.h']],
+          [['tok-key','description'],['tok-dim',': '],['tok-val','MCU platform — SDK, FreeRTOS, real-time constraints (YourRepo/.cursor/rules/)']],
+          [['tok-key','globs'],['tok-dim',':       '],['tok-str','src/**/*.c, src/**/*.h']],
           [['tok-key','alwaysApply'],['tok-dim',': '],['tok-val','false']],
           [['tok-dim','---']],
           [],
-          [['tok-head','# QCC3095 Platform Rules']],
+          [['tok-head','# MCU Platform Rules']],
           [],
-          [['tok-md','Chip: QCC3095 · OS: FreeRTOS · Audio: Qualcomm ADK/Kymera · BT: Synergy CM.']],
+          [['tok-md','Chip: [your-MCU] · OS: FreeRTOS · Real-time: audio, low-latency. Limited SRAM.']],
           [['tok-md','Real-time: 48 kHz audio, <20 ms latency. Limited SRAM — careful memory management.']],
           [],
           [['tok-head','## Key Directories']],
-          [['tok-md','  '],['tok-str','qcc3095/adk/'],['tok-md',' — Qualcomm ADK (do not modify)']],
-          [['tok-md','  '],['tok-str','qcc3095/cardo/src/'],['tok-md',' — Cardo application code']],
-          [['tok-md','  '],['tok-str','qcc3095/cardo/src/ic_protocols/'],['tok-md',' — Sena, Apollo protocols']],
+          [['tok-md','  '],['tok-str','vendor/sdk/'],['tok-md',' — Vendor SDK (do not modify)']],
+          [['tok-md','  '],['tok-str','src/app/'],['tok-md',' — Application code']],
+          [['tok-md','  '],['tok-str','src/protocols/'],['tok-md',' — Intercom protocols']],
           [],
           [['tok-head','## FreeRTOS Patterns']],
           [['tok-md','Tasks via '],['tok-str','TaskData'],['tok-md',' + handler switch on '],['tok-str','MessageId'],['tok-md','.']],
-          [['tok-md','Send with '],['tok-str','MessageSend()'],['tok-md','; register CM via '],['tok-str','CmRegisterReqSend()'],['tok-md','.']],
+          [['tok-md','Send with '],['tok-str','MessageSend()'],['tok-md','; register handlers via '],['tok-str','RegisterReqSend()'],['tok-md','.']],
           [],
-          [['tok-head','## CM Primitives']],
-          [['tok-md','SLC: '],['tok-str','CSR_BT_CM_SLC_CONNECT_IND'],['tok-md',', '],['tok-str','..._CFM'],['tok-md',', '],['tok-str','..._DISCONNECT_IND']],
+          [['tok-head','## BT Stack Primitives']],
+          [['tok-md','SLC: '],['tok-str','BT_SLC_CONNECT_IND'],['tok-md',', '],['tok-str','..._CFM'],['tok-md',', '],['tok-str','..._DISCONNECT_IND']],
         ]
       },
       {
@@ -352,14 +352,14 @@
         fname: 'always/azure-devops.mdc',
         code: [
           [['tok-dim','---']],
-          [['tok-key','description'],['tok-dim',': '],['tok-val','Cardo Azure DevOps org, project, MCP gate, PR scope (~/.cursor/rules/always/)']],
+          [['tok-key','description'],['tok-dim',': '],['tok-val','Azure DevOps org, project, MCP gate, PR scope (~/.cursor/rules/always/)']],
           [['tok-key','alwaysApply'],['tok-dim',':   '],['tok-ok','true']],
           [['tok-dim','---']],
           [],
-          [['tok-head','# Cardo Azure DevOps']],
+          [['tok-head','# Azure DevOps']],
           [],
-          [['tok-md','MCP server: '],['tok-str','user-azure-devops'],['tok-md',', project '],['tok-str','Cardo'],['tok-md',', repo '],['tok-str','Cardo_Products']],
-          [['tok-md','Org: '],['tok-str','cardovsts'],['tok-md',' · team: '],['tok-str','SOFTWARE'],['tok-md',' · always pass '],['tok-str','project: "Cardo"'],['tok-md',' to MCP tools.']],
+          [['tok-md','MCP server: '],['tok-str','azure-devops'],['tok-md',', project '],['tok-str','YourProject'],['tok-md',', repo '],['tok-str','YourRepo']],
+          [['tok-md','Org: '],['tok-str','your-org'],['tok-md',' · team: '],['tok-str','your-team'],['tok-md',' · always pass '],['tok-str','project: "YourProject"'],['tok-md',' to MCP tools.']],
           [],
           [['tok-head','## Mandatory work item fetch']],
           [['tok-md','On bug/task/WI mention: '],['tok-str','wit_get_work_item'],['tok-md',' + comments if '],['tok-str','System.CommentCount > 0'],['tok-md','.']],
@@ -374,34 +374,34 @@
       },
       {
         label: 'manual',
-        fname: 'bt-intercom-core.mdc',
+        fname: 'bt-module.mdc',
         code: [
           [['tok-dim','---']],
-          [['tok-key','description'],['tok-dim',': '],['tok-val','Bluetooth intercom core — state, riders, protocol adapters (Cardo_Products/.cursor/rules/)']],
-          [['tok-key','globs'],['tok-dim',':       '],['tok-str','src/ic/bt_intercom_*']],
+          [['tok-key','description'],['tok-dim',': '],['tok-val','Bluetooth module core — state, handlers, protocol adapters (YourRepo/.cursor/rules/)']],
+          [['tok-key','globs'],['tok-dim',':       '],['tok-str','src/bt/bt_module_*']],
           [['tok-key','alwaysApply'],['tok-dim',': '],['tok-val','false']],
           [['tok-dim','---']],
           [],
-          [['tok-head','# Bluetooth Intercom Core Module Rules']],
+          [['tok-head','# Bluetooth Module Core Rules']],
           [],
-          [['tok-md','Central coordination for intercom: rider registration, connection state, protocol adapters.']],
+          [['tok-md','Central coordination: handler registration, connection state, protocol adapters.']],
           [],
-          [['tok-head','## Rider Management']],
-          [['tok-md','Rider IDs: '],['tok-str','bt_ic_rider_a'],['tok-md',', '],['tok-str','bt_ic_rider_b'],['tok-md','. Register via '],['tok-str','bt_intercom_core_register_rider()'],['tok-md','.']],
-          [['tok-err','Always'],['tok-md',' check '],['tok-str','IS_RIDER_VALID(rider)'],['tok-md',' before using rider index.']],
+          [['tok-head','## Handler Management']],
+          [['tok-md','Handler IDs: '],['tok-str','handler_a'],['tok-md',', '],['tok-str','handler_b'],['tok-md','. Register via '],['tok-str','bt_module_register_handler()'],['tok-md','.']],
+          [['tok-err','Always'],['tok-md',' check '],['tok-str','IS_HANDLER_VALID(h)'],['tok-md',' before using handler index.']],
           [],
           [['tok-head','## Protocol Adapter Pattern']],
-          [['tok-md','Protocols register '],['tok-str','bt_ic_protocol_adapter_t'],['tok-md',' function pointers:']],
-          [['tok-md','  '],['tok-str','connect_slc'],['tok-md',', '],['tok-str','disconnect_slc'],['tok-md',', '],['tok-str','connect_ic'],['tok-md',', '],['tok-str','disconnect_ic']],
-          [['tok-md','Notify core via '],['tok-str','bt_intercom_core_protocol_event_handler()'],['tok-md','.']],
+          [['tok-md','Protocols register '],['tok-str','bt_protocol_adapter_t'],['tok-md',' function pointers:']],
+          [['tok-md','  '],['tok-str','connect_slc'],['tok-md',', '],['tok-str','disconnect_slc'],['tok-md',', '],['tok-str','connect_audio'],['tok-md',', '],['tok-str','disconnect_audio']],
+          [['tok-md','Notify core via '],['tok-str','bt_module_protocol_event_handler()'],['tok-md','.']],
           [],
           [['tok-head','## Related rules']],
-          [['tok-md','Pairing: '],['tok-str','bt-intercom-pairing.mdc'],['tok-md',' · Protocols: '],['tok-str','bt-intercom-protocols.mdc']],
+          [['tok-md','Pairing: '],['tok-str','bt-pairing.mdc'],['tok-md',' · Protocols: '],['tok-str','bt-protocols.mdc']],
         ]
       }
     ];
 
-    const fnames = ['always/core-c-rules.mdc','qcc3095-platform.mdc','always/azure-devops.mdc','bt-intercom-core.mdc'];
+    const fnames = ['always/core-c-rules.mdc','mcu-platform.mdc','always/azure-devops.mdc','bt-module.mdc'];
     let activeTab = 0;
 
     function renderCode(idx) {

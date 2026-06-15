@@ -3,14 +3,14 @@ const STORAGE_KEY = 'cursorWorkflowAnswers';
 const DEFAULTS_LOADED_KEY = 'cursorWorkflowDefaultsLoaded';
 
 const WORKSHOP_DEFAULTS = {
-  stack: 'Embedded C firmware — Cardo_Products repo, QCC3095, Azure DevOps project Cardo',
-  painPoints: 'Agent guesses ADO fields/repro steps, skips MCP fetch, mixes multiple WIs in one PR',
-  repeatedWorkflow: 'Start ADO WI → investigate/fix → finish WI and open PR via ADO MCP',
-  alwaysRules: 'C99/C11 only — no C++. snake_case with module prefix (bt_ic_, ic_sena_). 4-space indent, 150-col limit. Short functions, early exits. Macro-based logging with zero cost when disabled. Build to verify before considering a step done.',
-  neverRules: 'Never use C++ features. Never make commits — user handles version control. Never modify ADK base code — extend via application only. Never edit auto-generated files — change the source or use the extension API.',
+  stack: 'Embedded C firmware — [your-repo], [your-MCU], Azure DevOps project [YourProject]',
+  painPoints: 'Agent guesses work item fields/repro steps, skips MCP fetch, mixes multiple tasks in one PR',
+  repeatedWorkflow: 'Start WI → investigate/fix → finish WI and open PR via ADO MCP',
+  alwaysRules: 'C99/C11 only — no C++. snake_case with module prefix. 4-space indent, 150-col limit. Short functions, early exits. Macro-based logging with zero cost when disabled. Build to verify before considering a step done.',
+  neverRules: 'Never use C++ features. Never make commits — user handles version control. Never modify vendor SDK code — extend via application only. Never edit auto-generated files — change the source or use the extension API.',
   filePatternRules: [
-    { pattern: 'qcc3095/**/*.c, qcc3095/**/*.h', rule: 'FreeRTOS task/message patterns, CM library primitives, no ADK base modifications' },
-    { pattern: 'src/ic/bt_intercom_*', rule: 'Rider validation (IS_RIDER_VALID), protocol adapter pattern, bt_ic_ prefix' },
+    { pattern: 'src/**/*.c, src/**/*.h', rule: 'FreeRTOS task/message patterns, SDK primitives, no vendor SDK modifications' },
+    { pattern: 'src/bt/bt_module_*', rule: 'Handler validation, protocol adapter pattern, module prefix' },
   ],
   investigateSteps: [
     '1. Gather context — re-read symptom, git log, related files',
@@ -26,7 +26,7 @@ const WORKSHOP_DEFAULTS = {
     '4. Suggest minimal actionable fixes only',
   ].join('\n'),
   customName: 'start-wi',
-  customDesc: 'Fetch ADO WI via MCP, create apollo/<feature>/bug-<id>-<slug> branch, link to WI, baseline build',
+  customDesc: 'Fetch WI via MCP, create feature/bug-<id>-<slug> branch, link to WI, baseline build',
 };
 
 const RECOMMENDED_CUSTOM_SKILL = {
