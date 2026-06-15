@@ -1,0 +1,563 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Skills & Commands — Cardo AI Workshop</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .skills-layout { display: grid; grid-template-columns: 1fr 1.5fr; gap: 18px; flex: 1; min-height: 0; margin-top: 10px; }
+    .cmd-panel { display: flex; flex-direction: column; gap: 10px; }
+    .cmd-list { display: flex; flex-direction: column; gap: 8px; }
+    .cmd-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; border-radius: var(--r-sm);
+      background: var(--panel); border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.2s; text-align: left;
+    }
+    .cmd-btn:hover { background: var(--teal-dim); border-color: var(--teal-border); }
+    .cmd-btn.active { background: var(--teal-dim); border-color: var(--teal); box-shadow: 0 0 20px rgba(0,153,204,0.15); }
+    .cmd-icon { font-size: 20px; }
+    .cmd-name { font-family: var(--ff-m); font-size: 13px; color: var(--teal); font-weight: 500; }
+    .cmd-desc { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+
+    /* Skill definition panel */
+    .skill-def-shell {
+      display: none;
+      flex-direction: column;
+      background: rgba(3,5,14,0.97);
+      border: 1px solid rgba(192,132,252,0.35);
+      border-radius: var(--r-sm);
+      overflow: hidden;
+      flex: 0 0 auto;
+      max-height: 40%;
+      animation: fadeSkill 0.2s ease;
+    }
+    .skill-def-shell.visible { display: flex; }
+    @keyframes fadeSkill { from{opacity:0;transform:translateY(-3px)} to{opacity:1;transform:none} }
+    .skill-def-bar {
+      background: rgba(192,132,252,0.07);
+      border-bottom: 1px solid rgba(192,132,252,0.2);
+      padding: 7px 14px;
+      display: flex; align-items: center; gap: 8px;
+      flex-shrink: 0;
+    }
+    .skill-def-tag {
+      font-family: var(--ff-m); font-size: 10px;
+      padding: 2px 8px; border-radius: 20px;
+      background: rgba(192,132,252,0.15); border: 1px solid rgba(192,132,252,0.3);
+      color: #ddc7ff;
+    }
+    .skill-def-filename { font-family: var(--ff-m); font-size: 11px; color: rgba(221,199,255,0.55); }
+    .skill-def-body {
+      flex: 1; min-height: 0;
+      padding: 10px 16px 12px;
+      overflow-y: auto;
+      font-family: var(--ff-m); font-size: 11px; line-height: 1.7;
+    }
+    .mdc-line { display: block; }
+    .mdc-gap  { display: block; height: 5px; }
+    .mdc-fm   { color: rgba(122,148,188,0.35); }
+    .mdc-key  { color: var(--teal); }
+    .mdc-sep  { color: rgba(122,148,188,0.4); }
+    .mdc-val  { color: #c8d8f0; }
+    .mdc-h1   { color: #ddc7ff; }
+    .mdc-h2   { color: rgba(0,153,204,0.8); }
+    .mdc-num  { color: #c8d8f0; }
+    .mdc-bullet { color: #7a94bc; }
+
+    /* Terminal */
+    .terminal-panel { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+    .terminal-shell { flex: 1; background: rgba(3,5,14,0.97); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+    .term-bar { background: rgba(255,255,255,0.05); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .term-dots { display: flex; gap: 5px; }
+    .td { width: 10px; height: 10px; border-radius: 50%; }
+    .td-r{background:#ff5f57}.td-y{background:#ffbd2e}.td-g{background:#28c941}
+    .term-title { font-family: var(--ff-m); font-size: 11px; color: var(--muted); flex:1; text-align:center; }
+    .term-body { flex: 1; padding: 16px 20px; overflow-y: auto; min-height: 0; white-space: pre-wrap; }
+    .term-line { font-family: var(--ff-m); font-size: 12.5px; line-height: 1.65; }
+    .term-prompt { color: var(--good); }
+    .term-cmd    { color: var(--teal); }
+    .term-section{ color: var(--teal); font-weight: 500; }
+    .term-text   { color: #c8d8f0; }
+    .term-item   { color: var(--muted); }
+    .term-ok     { color: var(--good); }
+    .term-warn   { color: #fde68a; }
+    .term-err    { color: var(--bad); }
+    .term-dim    { color: rgba(122,148,188,0.5); }
+    .cursor-blink { display: inline-block; width: 7px; height: 14px; background: var(--teal); vertical-align: middle; animation: blink 1s step-end infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+    .placeholder { color: var(--muted); font-family: var(--ff-m); font-size: 13px; opacity: 0.5; text-align: center; margin-top: 40px; display: block; }
+
+    .where-box { padding: 12px 16px; border-radius: var(--r-sm); background: var(--panel); border: 1px solid var(--border); margin-top: 10px; }
+    .where-title { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .where-steps { display: flex; gap: 6px; flex-wrap: wrap; }
+    .where-step { font-family: var(--ff-m); font-size: 11px; padding: 4px 10px; border-radius: var(--r-pill); background: var(--purple-dim); border: 1px solid var(--purple-border); color: #ddc7ff; }
+  </style>
+</head>
+<body>
+  <div class="orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="progress-bar"></div>
+
+  <header class="slide-header">
+    <div class="header-logo"><img src="cardo-logo.png" alt="Cardo Systems"></div>
+    <div class="header-dots" id="dots"></div>
+    <div class="header-right">
+      <span class="header-counter" id="counter"></span>
+      <button class="help-btn" onclick="toggleShortcuts()">?</button>
+    </div>
+  </header>
+
+  <main class="slide">
+    <div class="tag anim d0">Skills &amp; Commands</div>
+    <h2 class="anim d1">Make good behaviour the easy path</h2>
+    <p class="anim d1" style="font-size:13px;color:var(--muted);margin-top:-6px;margin-bottom:0;line-height:1.4">A small .mdc file turns expert judgement into a one-line command anyone can run</p>
+
+    <div class="skills-layout">
+      <!-- LEFT: command list -->
+      <div class="cmd-panel anim d2">
+        <p style="font-size:13px;margin-bottom:2px">Click a command to see how it's defined ↓</p>
+        <div class="cmd-list">
+          <div class="cmd-btn" id="cb-0" onclick="runCmd(0)">
+            <span class="cmd-icon">🚀</span>
+            <div class="cmd-info">
+              <div class="cmd-name">/start-wi</div>
+              <div class="cmd-desc">Fetch ADO WI, branch, link, baseline build</div>
+            </div>
+          </div>
+          <div class="cmd-btn" id="cb-1" onclick="runCmd(1)">
+            <span class="cmd-icon">✅</span>
+            <div class="cmd-info">
+              <div class="cmd-name">/finish-wi</div>
+              <div class="cmd-desc">Review diff, build gate, open ADO PR</div>
+            </div>
+          </div>
+          <div class="cmd-btn" id="cb-2" onclick="runCmd(2)">
+            <span class="cmd-icon">🔍</span>
+            <div class="cmd-info">
+              <div class="cmd-name">/investigate</div>
+              <div class="cmd-desc">Map the problem before touching code</div>
+            </div>
+          </div>
+          <div class="cmd-btn" id="cb-3" onclick="runCmd(3)">
+            <span class="cmd-icon">🔧</span>
+            <div class="cmd-info">
+              <div class="cmd-name">/safe-refactor</div>
+              <div class="cmd-desc">Preserve behaviour, change structure safely</div>
+            </div>
+          </div>
+          <div class="cmd-btn" id="cb-4" onclick="runCmd(4)">
+            <span class="cmd-icon">👁️</span>
+            <div class="cmd-info">
+              <div class="cmd-name">/review-pr</div>
+              <div class="cmd-desc">Structured diff review against project rules</div>
+            </div>
+          </div>
+        </div>
+        <div class="where-box">
+          <div class="where-title">ADO lifecycle · also /pr-triage for PR comments</div>
+          <div class="where-steps">
+            <span class="where-step">~/.cursor/skills/ado-*</span>
+            <span class="where-step">azure-devops.mdc</span>
+            <span class="where-step">/start-wi → /finish-wi</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: skill definition + terminal (stacked) -->
+      <div class="terminal-panel anim d3">
+
+        <!-- Skill definition (hidden until command clicked) -->
+        <div class="skill-def-shell" id="skill-def-shell">
+          <div class="skill-def-bar">
+            <span class="skill-def-tag">agent rule</span>
+            <span class="skill-def-filename" id="skill-def-filename"></span>
+          </div>
+          <div class="skill-def-body" id="skill-def-body"></div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="terminal-shell">
+          <div class="term-bar">
+            <div class="term-dots"><span class="td td-r"></span><span class="td td-y"></span><span class="td td-g"></span></div>
+            <span class="term-title">Cursor Agent Terminal</span>
+          </div>
+          <div class="term-body" id="term-body">
+            <span class="placeholder">← Select a command to see it in action</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <footer class="slide-footer">
+    <button class="nav-btn" id="btn-prev" onclick="go(current-1)">← Prev</button>
+    <button class="nav-btn primary" id="btn-next" onclick="go(current+1)">Next →</button>
+  </footer>
+
+  <div id="shortcut-overlay" onclick="if(event.target===this)toggleShortcuts()">
+    <div class="shortcut-panel">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcut-row"><span>Next slide</span><div><span class="key">→</span><span class="key">↓</span></div></div>
+      <div class="shortcut-row"><span>Previous slide</span><div><span class="key">←</span><span class="key">↑</span></div></div>
+      <div class="shortcut-row"><span>Jump to slide</span><div><span class="key">Click dot</span></div></div>
+      <div class="shortcut-row"><span>This overlay</span><div><span class="key">?</span></div></div>
+      <div class="shortcut-row"><span>Close</span><div><span class="key">Esc</span></div></div>
+      <div style="margin-top:18px"><button class="nav-btn" onclick="toggleShortcuts()" style="width:100%;justify-content:center">Close</button></div>
+    </div>
+  </div>
+
+  <!-- ✏️ Fill-in drawer -->
+  <div class="form-drawer" id="form-drawer">
+    <div class="form-drawer-body">
+      <div class="form-drawer-inner">
+        <p class="form-drawer-hint">Defaults loaded — edit, clear, or restore per field</p>
+        <div class="form-row form-row-2">
+          <div class="form-field">
+            <label class="form-label">/investigate steps for your project</label>
+            <textarea id="f-investigate" class="form-textarea" rows="2" placeholder="e.g. 1. grep symbol  2. check ADO ticket  3. read surrounding ISR" oninput="saveField('investigateSteps',this.value); updateFillIndicator();"></textarea>
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="useDefault('investigateSteps', document.getElementById('f-investigate'))">Use default</button>
+              <button type="button" class="btn-field-action" onclick="clearField('investigateSteps', document.getElementById('f-investigate'))">Clear</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">/review-pr checklist for your codebase</label>
+            <textarea id="f-review" class="form-textarea" rows="2" placeholder="e.g. Check for malloc, verify ISR safety, confirm naming" oninput="saveField('reviewChecklist',this.value); updateFillIndicator();"></textarea>
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="useDefault('reviewChecklist', document.getElementById('f-review'))">Use default</button>
+              <button type="button" class="btn-field-action" onclick="clearField('reviewChecklist', document.getElementById('f-review'))">Clear</button>
+            </div>
+          </div>
+        </div>
+        <p class="form-drawer-hint" style="margin-top:14px;margin-bottom:6px">Custom skill — optional slash command for a workflow you repeat</p>
+        <div class="form-row form-row-2" style="margin-top:0">
+          <div class="form-field">
+            <label class="form-label">Command name</label>
+            <input id="f-customname" class="form-input" placeholder="e.g. start-wi, deploy-staging, triage-crash" oninput="saveField('customName',this.value); updateFillIndicator();">
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="clearField('customName', document.getElementById('f-customname'))">Clear</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Skill description</label>
+            <textarea id="f-customdesc" class="form-textarea" rows="2" placeholder="What should this command do? Steps, outputs, when to use it." oninput="saveField('customDesc',this.value); updateFillIndicator();"></textarea>
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="clearField('customDesc', document.getElementById('f-customdesc'))">Clear</button>
+            </div>
+          </div>
+        </div>
+        <div class="field-actions" style="margin-top:4px">
+          <button type="button" class="btn-field-action" onclick="useRecommendedCustomSkill({ customName: 'f-customname', customDesc: 'f-customdesc' })">Use recommended (/start-wi)</button>
+          <button type="button" class="btn-field-action" onclick="clearCustomSkill()">Clear skill</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-drawer-tab-wrap">
+      <button class="form-drawer-tab" onclick="toggleDrawer()">
+        <span class="filled-dot" id="filled-dot"></span>
+        ✏️ Your Skills &amp; Commands
+        <span class="drawer-arrow" id="drawer-arrow">▲</span>
+      </button>
+    </div>
+  </div>
+
+  <script src="nav.js"></script>
+  <script src="workshop-defaults.js"></script>
+  <script>
+    function clearCustomSkill() {
+      clearField('customName', document.getElementById('f-customname'));
+      clearField('customDesc', document.getElementById('f-customdesc'));
+    }
+    function updateFillIndicator() {
+      const a = getAnswers();
+      document.getElementById('filled-dot').classList.toggle('show', !!(a.investigateSteps || a.reviewChecklist || a.customName || a.customDesc));
+    }
+    function toggleDrawer() {
+      toggleDrawerBase('form-drawer', 'drawer-arrow');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      initWorkshopFields({
+        investigateSteps: 'f-investigate',
+        reviewChecklist: 'f-review',
+        customName: 'f-customname',
+        customDesc: 'f-customdesc',
+      }, updateFillIndicator);
+    });
+  </script>
+  <script>
+    function mdcLine(cls, ...parts) {
+      return '<span class="mdc-line ' + cls + '">' + parts.join('') + '</span>';
+    }
+    function mdcGap() { return '<span class="mdc-gap"></span>'; }
+    function k(s)  { return '<span class="mdc-key">'  + s + '</span>'; }
+    function sep() { return '<span class="mdc-sep">: </span>'; }
+    function v(s)  { return '<span class="mdc-val">'  + s + '</span>'; }
+
+    const DEMOS = [
+      {
+        cmd: '/start-wi',
+        file: '~/.cursor/skills/ado-start-work-item/SKILL.md',
+        mdcHtml: [
+          mdcLine('mdc-fm', '---'),
+          mdcLine('', k('name'), sep(), v('ado-start-work-item')),
+          mdcLine('mdc-fm', '---'),
+          mdcGap(),
+          mdcLine('mdc-h1', '# ADO Start Work Item'),
+          mdcGap(),
+          mdcLine('mdc-num', '1. wit_get_work_item — project Cardo, expand relations'),
+          mdcLine('mdc-num', '2. Summarize title, repro, product model, main feature'),
+          mdcLine('mdc-num', '3. git checkout -b apollo/<feature>/bug-<id>-<slug>'),
+          mdcLine('mdc-num', '4. wit_add_artifact_link — link branch to WI'),
+          mdcLine('mdc-num', '5. Baseline build — confirm clean starting point'),
+        ].join(''),
+        lines: [
+          {cls:'term-prompt', t:'$ '},
+          {cls:'term-cmd',    t:'/start-wi 48231\n'},
+          {cls:'term-dim',    t:'\nazure-devops.mdc already in context — fetching WI...\n'},
+          {cls:'term-ok',     t:'\n✓ Work item #48231 — BT pairing timeout after 3 devices\n'},
+          {cls:'term-item',   t:'  Product: Packtalk Edge · Feature: IC Legacy\n'},
+          {cls:'term-item',   t:'  https://cardovsts.visualstudio.com/Cardo/_workitems/edit/48231\n'},
+          {cls:'term-ok',     t:'\n✓ Branch created\n'},
+          {cls:'term-item',   t:'  apollo/ic-legacy/bug-48231-pairing-timeout\n'},
+          {cls:'term-ok',     t:'\n✓ Linked branch to WI via MCP\n'},
+          {cls:'term-ok',     t:'\n✓ Baseline build — qcc3095 headset target passes\n'},
+          {cls:'term-warn',   t:'\n? Ready to investigate — run /investigate next?\n'},
+        ]
+      },
+      {
+        cmd: '/finish-wi',
+        file: '~/.cursor/skills/ado-finish-work-item/SKILL.md',
+        mdcHtml: [
+          mdcLine('mdc-fm', '---'),
+          mdcLine('', k('name'), sep(), v('ado-finish-work-item')),
+          mdcLine('mdc-fm', '---'),
+          mdcGap(),
+          mdcLine('mdc-h1', '# ADO Finish Work Item'),
+          mdcGap(),
+          mdcLine('mdc-num', '1. Re-fetch WI via MCP (fresh session)'),
+          mdcLine('mdc-num', '2. git diff origin/develop_apollo...HEAD — single-topic check'),
+          mdcLine('mdc-num', '3. Build gate + unit tests for touched areas'),
+          mdcLine('mdc-num', '4. Readiness review — get user approval'),
+          mdcLine('mdc-num', '5. repo_create_pull_request via ADO MCP'),
+        ].join(''),
+        lines: [
+          {cls:'term-prompt', t:'$ '},
+          {cls:'term-cmd',    t:'/finish-wi\n'},
+          {cls:'term-dim',    t:'\nRe-fetching WI #48231 + reviewing diff...\n'},
+          {cls:'term-ok',     t:'\n✓ Scope check — diff matches WI title only\n'},
+          {cls:'term-item',   t:'  2 files: pairing_manager.c, bt_config.h\n'},
+          {cls:'term-ok',     t:'\n✓ Build gate\n'},
+          {cls:'term-item',   t:'  qcc3095 build passes · unit/bt_pairing_test.c passes\n'},
+          {cls:'term-ok',     t:'\n✓ PR created via ADO MCP\n'},
+          {cls:'term-item',   t:'  PR #1842 → develop_apollo · linked to WI #48231\n'},
+          {cls:'term-section',t:'\nNext: /pr-triage for review comments\n'},
+        ]
+      },
+      {
+        cmd: '/investigate',
+        file: '.cursor/rules/investigate.mdc',
+        mdcHtml: [
+          mdcLine('mdc-fm', '---'),
+          mdcLine('', k('description'), sep(), v('Map the problem before touching code')),
+          mdcLine('', k('alwaysApply'), sep(), v('false')),
+          mdcLine('mdc-fm', '---'),
+          mdcGap(),
+          mdcLine('mdc-h1', '# /investigate'),
+          mdcGap(),
+          mdcLine('mdc-num', '1. Gather context — re-read symptom, git log, related files'),
+          mdcLine('mdc-num', '2. Map suspects — list files, symbols, callers involved'),
+          mdcLine('mdc-num', '3. Form hypotheses — ranked by likelihood, one sentence each'),
+          mdcLine('mdc-num', '4. Propose probes — log additions, assertions, debug steps only'),
+          mdcLine('mdc-num', '5. Avoid edits — do NOT change logic until evidence exists'),
+          mdcGap(),
+          mdcLine('mdc-h2', '## Output'),
+          mdcLine('mdc-bullet', '- Problem statement'),
+          mdcLine('mdc-bullet', '- Relevant files / symbols'),
+          mdcLine('mdc-bullet', '- Hypotheses ranked by likelihood'),
+          mdcLine('mdc-bullet', '- Verification steps'),
+          mdcLine('mdc-bullet', '- Questions before code changes'),
+        ].join(''),
+        lines: [
+          {cls:'term-prompt', t:'$ '},
+          {cls:'term-cmd',    t:'/investigate\n'},
+          {cls:'term-dim',    t:'\nRunning investigation protocol...\n'},
+          {cls:'term-ok',     t:'\n✓ Problem statement\n'},
+          {cls:'term-item',   t:'  Bluetooth audio drops after 3+ device pairing\n'},
+          {cls:'term-ok',     t:'\n✓ Relevant files / symbols\n'},
+          {cls:'term-item',   t:'  src/bt/pairing_manager.c\n'},
+          {cls:'term-item',   t:'  src/bt/connection_handler.c\n'},
+          {cls:'term-item',   t:'  include/bt/bt_types.h\n'},
+          {cls:'term-ok',     t:'\n✓ Hypotheses (ranked by likelihood)\n'},
+          {cls:'term-item',   t:'  1. Pairing list overflow → oldest entry eviction\n'},
+          {cls:'term-item',   t:'  2. RSSI threshold too aggressive in bt_config.h\n'},
+          {cls:'term-item',   t:'  3. Race in connection state machine at reconnect\n'},
+          {cls:'term-ok',     t:'\n✓ Verification steps\n'},
+          {cls:'term-item',   t:'  • Enable BT_PAIR_DEBUG log level\n'},
+          {cls:'term-item',   t:'  • Add assertion at pairing list boundary\n'},
+          {cls:'term-item',   t:'  • Reproduce with exactly 4 paired devices\n'},
+          {cls:'term-warn',   t:'\n? Questions before editing\n'},
+          {cls:'term-item',   t:'  • Is this a regression from last sprint?\n'},
+          {cls:'term-item',   t:'  • Does it affect QCC3095 and QCC5127?\n'},
+        ]
+      },
+      {
+        cmd: '/safe-refactor',
+        file: '.cursor/rules/safe-refactor.mdc',
+        mdcHtml: [
+          mdcLine('mdc-fm', '---'),
+          mdcLine('', k('description'), sep(), v('Preserve behaviour, change structure safely')),
+          mdcLine('', k('alwaysApply'), sep(), v('false')),
+          mdcLine('mdc-fm', '---'),
+          mdcGap(),
+          mdcLine('mdc-h1', '# /safe-refactor'),
+          mdcGap(),
+          mdcLine('mdc-num', '1. State the behaviour to preserve (what must not change)'),
+          mdcLine('mdc-num', '2. Create a small incremental plan — no big-bang rewrites'),
+          mdcLine('mdc-num', '3. Edit one logical unit at a time'),
+          mdcLine('mdc-num', '4. Run checks after each step'),
+          mdcLine('mdc-num', '5. Summarise risk and provide rollback guidance'),
+          mdcGap(),
+          mdcLine('mdc-h2', '## Output'),
+          mdcLine('mdc-bullet', '- Behaviour preserved'),
+          mdcLine('mdc-bullet', '- Files changed'),
+          mdcLine('mdc-bullet', '- Compatibility notes'),
+          mdcLine('mdc-bullet', '- Tests run / missing'),
+          mdcLine('mdc-bullet', '- Rollback guidance'),
+        ].join(''),
+        lines: [
+          {cls:'term-prompt', t:'$ '},
+          {cls:'term-cmd',    t:'/safe-refactor AudioManager_SetVolume\n'},
+          {cls:'term-dim',    t:'\nLoading safe refactor protocol...\n'},
+          {cls:'term-ok',     t:'\n✓ Behaviour to preserve\n'},
+          {cls:'term-item',   t:'  AudioManager_SetVolume() must clamp 0–100\n'},
+          {cls:'term-item',   t:'  No side effects on BT connection state\n'},
+          {cls:'term-ok',     t:'\n✓ Files to change\n'},
+          {cls:'term-item',   t:'  src/audio/audio_manager.c (primary)\n'},
+          {cls:'term-item',   t:'  src/audio/audio_types.h  (enum update)\n'},
+          {cls:'term-warn',   t:'\n⚠ Compatibility notes\n'},
+          {cls:'term-item',   t:'  3 callers pass raw int — add static_assert\n'},
+          {cls:'term-item',   t:'  HAL expects 0–15 scale — convert in adapter\n'},
+          {cls:'term-ok',     t:'\n✓ Tests run / missing\n'},
+          {cls:'term-ok',     t:'  ✓ unit/audio_manager_test.c passes\n'},
+          {cls:'term-err',    t:'  ✗ Missing: boundary value test at 0 and 100\n'},
+          {cls:'term-ok',     t:'\n✓ Rollback guidance\n'},
+          {cls:'term-item',   t:'  git stash before starting\n'},
+          {cls:'term-item',   t:'  Feature flag: AUDIO_REFACTOR_V2 in config.h\n'},
+        ]
+      },
+      {
+        cmd: '/review-pr',
+        file: '.cursor/rules/review-pr.mdc',
+        mdcHtml: [
+          mdcLine('mdc-fm', '---'),
+          mdcLine('', k('description'), sep(), v('Structured diff review against project rules')),
+          mdcLine('', k('alwaysApply'), sep(), v('false')),
+          mdcLine('mdc-fm', '---'),
+          mdcGap(),
+          mdcLine('mdc-h1', '# /review-pr'),
+          mdcGap(),
+          mdcLine('mdc-num', '1. Inspect the diff — understand intent before critiquing'),
+          mdcLine('mdc-num', '2. Classify risk — correctness, architecture, security, tests'),
+          mdcLine('mdc-num', '3. Check against .mdc rules — flag violations by file + line'),
+          mdcLine('mdc-num', '4. Suggest minimal actionable fixes only'),
+          mdcGap(),
+          mdcLine('mdc-h2', '## Output'),
+          mdcLine('mdc-bullet', '- Correctness issues'),
+          mdcLine('mdc-bullet', '- Architecture violations'),
+          mdcLine('mdc-bullet', '- Test gaps'),
+          mdcLine('mdc-bullet', '- Security / reliability'),
+          mdcLine('mdc-bullet', '- Suggested inline comments'),
+        ].join(''),
+        lines: [
+          {cls:'term-prompt', t:'$ '},
+          {cls:'term-cmd',    t:'/review-pr\n'},
+          {cls:'term-dim',    t:'\nReviewing diff against project rules...\n'},
+          {cls:'term-warn',   t:'\n⚠ Correctness issues\n'},
+          {cls:'term-item',   t:'  bt_handler.c:142 — null deref if conn == NULL\n'},
+          {cls:'term-item',   t:'  audio_sink.c:88 — integer overflow on vol * 256\n'},
+          {cls:'term-err',    t:'\n✗ Architecture violations\n'},
+          {cls:'term-item',   t:'  pairing.c imports from app/ layer (not allowed)\n'},
+          {cls:'term-item',   t:'  Direct HW register access — use HAL abstraction\n'},
+          {cls:'term-err',    t:'\n✗ Test gaps\n'},
+          {cls:'term-item',   t:'  No test for the new reconnect path\n'},
+          {cls:'term-item',   t:'  bt_config changes untested on QCC5127\n'},
+          {cls:'term-ok',     t:'\n✓ Security / reliability\n'},
+          {cls:'term-item',   t:'  No new attack surface detected\n'},
+          {cls:'term-item',   t:'  Memory bounds look correct in all new paths\n'},
+          {cls:'term-section',t:'\n📝 Suggested inline comments\n'},
+          {cls:'term-item',   t:'  Line 142: add NULL guard before conn access\n'},
+          {cls:'term-item',   t:'  Line 88: use uint32_t or clamp before multiply\n'},
+        ]
+      }
+    ];
+
+    let running = false;
+    let termTimeout = null;
+
+    function runCmd(idx) {
+      if (running) { running = false; }
+      if (termTimeout) { clearTimeout(termTimeout); termTimeout = null; }
+
+      document.querySelectorAll('.cmd-btn').forEach((b,i) => b.classList.toggle('active', i === idx));
+
+      const demo = DEMOS[idx];
+
+      // Show skill definition instantly
+      const shell = document.getElementById('skill-def-shell');
+      document.getElementById('skill-def-filename').textContent = demo.file;
+      document.querySelector('.skill-def-tag').textContent = demo.file.includes('skills/') ? 'user skill' : 'agent rule';
+      document.getElementById('skill-def-body').innerHTML = demo.mdcHtml;
+      shell.classList.remove('visible');
+      void shell.offsetWidth; // replay animation
+      shell.classList.add('visible');
+
+      // Show waiting state in terminal
+      const body = document.getElementById('term-body');
+      body.innerHTML = '<span class="term-dim" style="opacity:0.35">waiting for skill definition...</span>';
+
+      // Start terminal typing after delay
+      termTimeout = setTimeout(() => {
+        body.innerHTML = '';
+        let lineIdx = 0;
+        let charIdx = 0;
+        running = true;
+
+        function typeNext() {
+          if (!running) return;
+          if (lineIdx >= demo.lines.length) {
+            const cursor = document.createElement('span');
+            cursor.className = 'cursor-blink';
+            body.appendChild(cursor);
+            return;
+          }
+          const seg = demo.lines[lineIdx];
+          const span = document.createElement('span');
+          span.className = 'term-line ' + seg.cls;
+          body.appendChild(span);
+
+          function typeChar() {
+            if (!running) return;
+            if (charIdx < seg.t.length) {
+              span.textContent += seg.t[charIdx];
+              charIdx++;
+              body.scrollTop = body.scrollHeight;
+              const ch = seg.t[charIdx - 1];
+              const delay = ch === '\n' ? 60 : (seg.cls === 'term-item' ? 12 : 18);
+              setTimeout(typeChar, delay);
+            } else {
+              lineIdx++;
+              charIdx = 0;
+              const pause = seg.t.endsWith('\n') && lineIdx < demo.lines.length ? 30 : 0;
+              setTimeout(typeNext, pause);
+            }
+          }
+          typeChar();
+        }
+        typeNext();
+      }, 600);
+    }
+  </script>
+</body>
+</html>

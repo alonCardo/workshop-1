@@ -1,0 +1,316 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Full Loop — Cardo AI Workshop</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .flow-row { display: flex; align-items: stretch; gap: 0; margin-top: 16px; }
+    .step-wrap { display: flex; align-items: center; flex: 1; }
+    .step {
+      flex: 1; padding: 18px 16px; border-radius: var(--r-sm);
+      background: var(--panel); border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      display: flex; flex-direction: column; gap: 8px;
+      position: relative; overflow: hidden;
+    }
+    .step:hover { transform: translateY(-4px); border-color: var(--teal-border); background: var(--teal-dim); }
+    .step.active { border-color: var(--teal); background: var(--teal-dim); box-shadow: 0 0 28px rgba(0,153,204,0.18); transform: translateY(-5px); }
+    .step.active .step-num { background: var(--teal); color: #041320; }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+      background: rgba(255,255,255,0.1); display: grid; place-items: center;
+      font-family: var(--ff-d); font-size: 13px; font-weight: 800; color: var(--muted);
+      transition: all 0.25s;
+    }
+    .step-icon { font-size: 22px; line-height: 1; }
+    .step-title { font-family: var(--ff-d); font-size: 14px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+    .step-hint { font-size: 11px; color: var(--muted); line-height: 1.4; }
+    .arrow { padding: 0 6px; color: rgba(255,255,255,0.2); font-size: 18px; flex-shrink: 0; }
+    .step.active + .arrow, .step.active ~ .arrow { color: var(--teal); }
+
+    /* Detail panel */
+    .detail-panel {
+      margin-top: 14px; padding: 18px 22px; border-radius: var(--r-sm);
+      background: rgba(4,7,16,0.9); border: 1px solid var(--teal-border);
+      min-height: 80px; transition: all 0.25s;
+      animation: fadeUp 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .detail-top { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .detail-icon { font-size: 24px; }
+    .detail-title { font-family: var(--ff-d); font-size: 18px; font-weight: 700; color: var(--teal); letter-spacing: -0.02em; }
+    .detail-body { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .detail-item { display: flex; align-items: flex-start; gap: 8px; font-size: 13px; color: var(--muted); }
+    .detail-item::before { content: '·'; color: var(--teal); font-size: 18px; line-height: 1.2; flex-shrink: 0; }
+    .detail-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0,153,204,0.15);
+    }
+    .detail-meta-block { display: flex; flex-direction: column; gap: 4px; }
+    .detail-meta-label {
+      font-family: var(--ff-m);
+      font-size: 10px;
+      color: var(--teal);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .detail-meta-text { font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .detail-meta-code {
+      font-family: var(--ff-m);
+      font-size: 11px;
+      color: #c8d8f0;
+      background: rgba(0,0,0,0.25);
+      padding: 8px 10px;
+      border-radius: 6px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    /* Tour button */
+    .tour-btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 18px; border-radius: var(--r-pill);
+      border: 1px solid var(--teal-border); background: var(--teal-dim);
+      color: var(--teal); font-family: var(--ff-b); font-size: 13px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tour-btn:hover { background: var(--teal); color: #041320; }
+    .tour-btn.running { background: rgba(252,165,165,0.1); border-color: var(--bad-border); color: var(--bad); }
+    .tour-btn.running:hover { background: var(--bad); color: #1a0000; }
+  </style>
+</head>
+<body>
+  <div class="orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="progress-bar"></div>
+
+  <header class="slide-header">
+    <div class="header-logo"><img src="cardo-logo.png" alt="Cardo Systems"></div>
+    <div class="header-dots" id="dots"></div>
+    <div class="header-right">
+      <span class="header-counter" id="counter"></span>
+      <button class="help-btn" onclick="toggleShortcuts()">?</button>
+    </div>
+  </header>
+
+  <main class="slide">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <div class="tag anim d0">The Full Loop</div>
+      <button class="tour-btn anim d0" id="tour-btn" onclick="toggleTour()">▶ Start tour</button>
+    </div>
+    <h2 class="anim d1">Five steps from friction to repeatable workflow</h2>
+
+    <!-- Flow steps -->
+    <div class="flow-row anim d2">
+      <div class="step-wrap">
+        <div class="step active" id="step-0" onclick="selectStep(0)">
+          <div class="step-num">1</div>
+          <div class="step-icon">👀</div>
+          <div class="step-title">Observe</div>
+          <div class="step-hint">Find where AI use is painful or inconsistent</div>
+        </div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step-wrap">
+        <div class="step" id="step-1" onclick="selectStep(1)">
+          <div class="step-num">2</div>
+          <div class="step-icon">🔁</div>
+          <div class="step-title">Routine</div>
+          <div class="step-hint">Define the loop before you automate it</div>
+        </div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step-wrap">
+        <div class="step" id="step-2" onclick="selectStep(2)">
+          <div class="step-num">3</div>
+          <div class="step-icon">📏</div>
+          <div class="step-title">Rules</div>
+          <div class="step-hint">Encode constraints as .mdc files</div>
+        </div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step-wrap">
+        <div class="step" id="step-3" onclick="selectStep(3)">
+          <div class="step-num">4</div>
+          <div class="step-icon">🧩</div>
+          <div class="step-title">Skill</div>
+          <div class="step-hint">Package the routine as a reusable playbook</div>
+        </div>
+      </div>
+      <div class="arrow">→</div>
+      <div class="step-wrap">
+        <div class="step" id="step-4" onclick="selectStep(4)">
+          <div class="step-num">5</div>
+          <div class="step-icon">⚡</div>
+          <div class="step-title">Command</div>
+          <div class="step-hint">One trigger for the whole workflow</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detail panel -->
+    <div class="detail-panel" id="detail-panel"></div>
+
+    <!-- Maturity meter -->
+    <div class="meter-wrap anim d5">
+      <div class="meter-meta">
+        <span class="meter-label">AI Usage Maturity &nbsp;·&nbsp; <span id="step-label">Step 1 — Observe</span></span>
+        <span class="meter-pct" id="m-pct">40%</span>
+      </div>
+      <div class="meter-track"><div class="meter-fill" id="m-fill" style="width:40%"></div></div>
+    </div>
+  </main>
+
+  <footer class="slide-footer">
+    <button class="nav-btn" id="btn-prev" onclick="go(current-1)">← Prev</button>
+    <button class="nav-btn primary" id="btn-next" onclick="go(current+1)">Next →</button>
+  </footer>
+
+  <div id="shortcut-overlay" onclick="if(event.target===this)toggleShortcuts()">
+    <div class="shortcut-panel">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcut-row"><span>Next slide</span><div><span class="key">→</span><span class="key">↓</span></div></div>
+      <div class="shortcut-row"><span>Previous slide</span><div><span class="key">←</span><span class="key">↑</span></div></div>
+      <div class="shortcut-row"><span>Jump to slide</span><div><span class="key">Click dot</span></div></div>
+      <div class="shortcut-row"><span>This overlay</span><div><span class="key">?</span></div></div>
+      <div class="shortcut-row"><span>Close</span><div><span class="key">Esc</span></div></div>
+      <div style="margin-top:18px"><button class="nav-btn" onclick="toggleShortcuts()" style="width:100%;justify-content:center">Close</button></div>
+    </div>
+  </div>
+
+  <script src="nav.js"></script>
+  <script>
+    const STEPS = [
+      {
+        icon:'👀', title:'Observe',
+        pct:40, label:'Step 1 — Observe',
+        items:[
+          'Where is AI use slow, risky, or unpredictable?',
+          'Which review failures keep repeating?',
+          'What context do you re-explain every session?',
+          'Where does AI drift from your conventions?',
+          'What tribal knowledge only one person has?',
+          'Which tasks take 10× longer with AI than without?',
+        ]
+      },
+      {
+        icon:'🔁', title:'Routine',
+        pct:55, label:'Step 2 — Routine',
+        items:[
+          'Write the workflow in plain English first',
+          'Define: what inputs are required?',
+          'Define: what are the steps in order?',
+          'Define: what does "done" look like?',
+          'Identify: what context must always be present?',
+          'Test the routine manually before scripting it',
+        ]
+      },
+      {
+        icon:'📏', title:'Rules',
+        pct:70, label:'Step 3 — Rules (.mdc)',
+        contextSaved:'Agent stops rediscovering org, project, MCP tools, and WI field names.',
+        example:'always/azure-devops.mdc\nwit_get_work_item before summarizing repro\nOne WI per PR · repo_* MCP not gh',
+        items:[
+          'Create an always-apply rule: org, project, MCP server, mandatory fetch gate',
+          'Encode custom WI field names and PR scope — agent stops guessing',
+          'Commit rules to the repo — everyone benefits from shared ADO context',
+          'Add coding standards as separate always/auto rules',
+          'Reference the rule from skills: "Read azure-devops.mdc first"',
+          'Test: mention a WI number — agent must fetch via MCP before answering',
+        ]
+      },
+      {
+        icon:'🧩', title:'Skill',
+        pct:84, label:'Step 4 — Skill',
+        contextSaved:'Agent follows your branch/PR checklist instead of inventing steps each time.',
+        example:'ado-start-work-item SKILL.md\n→ wit_get_work_item\n→ apollo/ic-legacy/bug-48231-pairing-timeout\n→ baseline build',
+        items:[
+          'Package the checklist: branch naming, link WI, build gate, PR readiness',
+          'Agent follows ado-start-work-item / ado-finish-work-item instead of improvising',
+          'Include MCP tool names and exact parameters — no guessing',
+          'Add a checklist the AI follows step by step',
+          'Reference azure-devops.mdc for static context',
+          'Test: run the skill, check output, refine',
+        ]
+      },
+      {
+        icon:'⚡', title:'Command',
+        pct:96, label:'Step 5 — Command',
+        contextSaved:'One line triggers the skill — azure-devops.mdc is already in every session.',
+        example:'$ /start-wi 48231\n$ /finish-wi\n$ /pr-triage   ← full ADO lifecycle',
+        items:[
+          'Give the skill a memorable name: /start-wi, /finish-wi, /pr-triage',
+          'Anyone on the team can now trigger the ADO lifecycle',
+          'The routine runs, rules apply, output is structured',
+          'Knowledge is no longer locked in your head',
+          'Onboarding a new dev? Hand them the commands',
+          'Measure: does AI output quality improve over time?',
+        ]
+      }
+    ];
+
+    let activeStep = 0;
+    let tourTimer = null;
+
+    function selectStep(idx) {
+      activeStep = idx;
+      document.querySelectorAll('.step').forEach((s,i) => s.classList.toggle('active', i === idx));
+      const s = STEPS[idx];
+      const metaHtml = s.contextSaved ? `
+        <div class="detail-meta">
+          <div class="detail-meta-block">
+            <span class="detail-meta-label">Context saved</span>
+            <span class="detail-meta-text">${s.contextSaved}</span>
+          </div>
+          <div class="detail-meta-block">
+            <span class="detail-meta-label">Example</span>
+            <span class="detail-meta-code">${s.example || ''}</span>
+          </div>
+        </div>` : '';
+      document.getElementById('detail-panel').innerHTML = `
+        <div class="detail-top">
+          <span class="detail-icon">${s.icon}</span>
+          <span class="detail-title">${s.title}</span>
+        </div>
+        <div class="detail-body">
+          ${s.items.map(it=>`<div class="detail-item">${it}</div>`).join('')}
+        </div>${metaHtml}`;
+      document.getElementById('m-fill').style.width = s.pct + '%';
+      document.getElementById('m-pct').textContent = s.pct + '%';
+      document.getElementById('step-label').textContent = s.label;
+    }
+
+    function toggleTour() {
+      if (tourTimer) {
+        clearInterval(tourTimer);
+        tourTimer = null;
+        const btn = document.getElementById('tour-btn');
+        btn.textContent = '▶ Start tour';
+        btn.classList.remove('running');
+      } else {
+        const btn = document.getElementById('tour-btn');
+        btn.innerHTML = '■ Stop tour';
+        btn.classList.add('running');
+        let i = (activeStep + 1) % STEPS.length;
+        selectStep(i);
+        tourTimer = setInterval(() => {
+          i = (i + 1) % STEPS.length;
+          selectStep(i);
+          if (i === STEPS.length - 1) {
+            clearInterval(tourTimer);
+            tourTimer = null;
+            btn.textContent = '▶ Start tour';
+            btn.classList.remove('running');
+          }
+        }, 1200);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => selectStep(0));
+  </script>
+</body>
+</html>

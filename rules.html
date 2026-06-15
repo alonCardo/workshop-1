@@ -1,0 +1,444 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rules & .mdc — Cardo AI Workshop</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .rules-layout { display: grid; grid-template-columns: 1fr 1.6fr; gap: 16px; flex: 1; min-height: 0; margin-top: 14px; }
+
+    /* Left: comparison + file tree */
+    .left-col { display: flex; flex-direction: column; gap: 12px; }
+    .compare { display: flex; flex-direction: column; gap: 8px; }
+    .cmp-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .cmp-card { padding: 12px 14px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--panel); }
+    .cmp-card.old { border-color: rgba(252,165,165,0.22); background: rgba(252,165,165,0.05); }
+    .cmp-card.new { border-color: var(--teal-border); background: var(--teal-dim); }
+    .cmp-label { font-family: var(--ff-m); font-size: 11px; font-weight: 700; margin-bottom: 7px; letter-spacing: 0.06em; }
+    .cmp-label.old { color: var(--bad); }
+    .cmp-label.new { color: var(--teal); }
+    .cmp-item { font-size: 12px; color: var(--muted); padding: 2px 0; }
+    .cmp-item::before { content: '· '; color: inherit; opacity: 0.5; }
+
+    /* File tree */
+    .file-tree { padding: 14px 16px; border-radius: var(--r-sm); background: rgba(4,7,16,0.8); border: 1px solid var(--border); font-family: var(--ff-m); font-size: 12px; }
+    .tree-header { color: var(--muted); font-size: 11px; margin-bottom: 8px; letter-spacing: 0.05em; }
+    .tree-dir { color: var(--teal); margin-bottom: 4px; }
+    .tree-file { color: var(--text); padding: 3px 0 3px 16px; cursor: pointer; border-radius: 5px; transition: all 0.15s; }
+    .tree-file:hover, .tree-file.active { background: var(--teal-dim); color: var(--teal); }
+    .tree-file::before { content: '├─ '; color: var(--muted); }
+    .tree-file:last-child::before { content: '└─ '; color: var(--muted); }
+
+    /* Right: interactive editor */
+    .right-col { display: flex; flex-direction: column; gap: 10px; }
+    .editor-header { display: flex; align-items: center; gap: 8px; }
+    .editor-title { font-family: var(--ff-m); font-size: 12px; color: var(--muted); flex: 1; }
+    .editor-title span { color: var(--teal); }
+    .tabs { display: flex; gap: 6px; }
+    .tab {
+      padding: 6px 14px; border-radius: var(--r-pill);
+      border: 1px solid var(--border); background: var(--panel);
+      font-family: var(--ff-m); font-size: 12px; color: var(--muted); cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tab:hover { color: var(--text); border-color: var(--teal-border); background: var(--teal-dim); }
+    .tab.active { background: var(--teal); color: #041320; border-color: var(--teal); font-weight: 700; }
+
+    .editor-shell {
+      flex: 1; background: rgba(4,7,16,0.95); border: 1px solid var(--border);
+      border-radius: var(--r-sm); overflow: hidden; display: flex; flex-direction: column;
+      min-height: 0;
+    }
+    .editor-titlebar {
+      background: rgba(255,255,255,0.04); border-bottom: 1px solid var(--border);
+      padding: 8px 14px; display: flex; align-items: center; gap: 10px;
+    }
+    .traffic { display: flex; gap: 5px; }
+    .traffic span { width: 10px; height: 10px; border-radius: 50%; }
+    .t-r { background: #ff5f57; } .t-y { background: #ffbd2e; } .t-g { background: #28c941; }
+    .editor-fname { font-family: var(--ff-m); font-size: 12px; color: var(--muted); }
+    .editor-body { flex: 1; padding: 16px 20px; overflow-y: auto; min-height: 0; }
+    .code-content { font-family: var(--ff-m); font-size: 12.5px; line-height: 1.75; white-space: pre; }
+    .code-content { transition: opacity 0.15s; }
+    .code-content.fade { opacity: 0; }
+    .type-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: var(--r-pill);
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      margin-left: 8px;
+    }
+    .type-always  { background: rgba(110,231,183,0.15); border: 1px solid var(--good-border); color: var(--good); }
+    .type-auto    { background: var(--teal-dim); border: 1px solid var(--teal-border); color: var(--teal); }
+    .type-agent   { background: var(--purple-dim); border: 1px solid var(--purple-border); color: var(--purple); }
+    .type-manual  { background: rgba(253,230,138,0.1); border: 1px solid rgba(253,230,138,0.25); color: #fde68a; }
+  </style>
+</head>
+<body>
+  <div class="orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="progress-bar"></div>
+
+  <header class="slide-header">
+    <div class="header-logo"><img src="cardo-logo.png" alt="Cardo Systems"></div>
+    <div class="header-dots" id="dots"></div>
+    <div class="header-right">
+      <span class="header-counter" id="counter"></span>
+      <button class="help-btn" onclick="toggleShortcuts()">?</button>
+    </div>
+  </header>
+
+  <main class="slide">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
+      <div class="tag anim d0">Rules &amp; .mdc Files</div>
+    </div>
+    <h2 class="anim d1">From <code style="font-family:var(--ff-m);font-size:0.75em;color:var(--bad)">.cursorrules</code> to <code style="font-family:var(--ff-m);font-size:0.75em;color:var(--teal)">.mdc</code> — the upgrade</h2>
+
+    <div class="rules-layout">
+      <!-- LEFT COLUMN -->
+      <div class="left-col anim d2">
+        <div class="compare">
+          <div class="cmp-row">
+            <div class="cmp-card old">
+              <div class="cmp-label old">⬜ .cursorrules (old)</div>
+              <div class="cmp-item">Plain text, no structure</div>
+              <div class="cmp-item">No glob scoping</div>
+              <div class="cmp-item">Always applied to all files</div>
+              <div class="cmp-item">One monolithic file</div>
+              <div class="cmp-item">No agent / command mode</div>
+            </div>
+            <div class="cmp-card new">
+              <div class="cmp-label new">✦ .mdc files (new)</div>
+              <div class="cmp-item">Frontmatter-controlled</div>
+              <div class="cmp-item">Scoped by glob pattern</div>
+              <div class="cmp-item">4 rule types (always/auto/agent/manual)</div>
+              <div class="cmp-item">Modular, composable</div>
+              <div class="cmp-item">Agent &amp; command mode support</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="file-tree">
+          <div class="tree-header">📁 ~/.cursor/rules/always/ · Cardo_Products/.cursor/rules/</div>
+          <div class="tree-dir">└─ .cursor/rules/</div>
+          <div style="padding-left:16px;color:var(--muted);font-size:11px;margin-bottom:4px">├─ always/ <span style="opacity:0.6">(user)</span></div>
+          <div style="padding-left:32px">
+            <div class="tree-file" id="tf-0" onclick="selectFile(0)">core-c-rules.mdc</div>
+            <div class="tree-file" id="tf-2" onclick="selectFile(2)">azure-devops.mdc</div>
+          </div>
+          <div style="padding-left:16px;color:var(--muted);font-size:11px;margin-bottom:4px">└─ <span style="opacity:0.6">(repo)</span></div>
+          <div style="padding-left:32px">
+            <div class="tree-file" id="tf-1" onclick="selectFile(1)">qcc3095-platform.mdc</div>
+            <div class="tree-file" id="tf-3" onclick="selectFile(3)">bt-intercom-core.mdc</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="type-badge type-always">always</span>
+          <span class="type-badge type-auto">auto</span>
+          <span class="type-badge type-agent">agent</span>
+          <span class="type-badge type-manual">manual</span>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: interactive editor -->
+      <div class="right-col anim d3">
+        <div class="editor-header">
+          <span class="editor-title">.cursor/rules/<span id="active-fname">always/core-c-rules.mdc</span></span>
+          <div class="tabs">
+            <button class="tab active" id="tab-0" onclick="switchTab(0)">always</button>
+            <button class="tab" id="tab-1" onclick="switchTab(1)">auto</button>
+            <button class="tab" id="tab-2" onclick="switchTab(2)">ado</button>
+            <button class="tab" id="tab-3" onclick="switchTab(3)">manual</button>
+          </div>
+        </div>
+        <div class="editor-shell">
+          <div class="editor-titlebar">
+            <div class="traffic"><span class="t-r"></span><span class="t-y"></span><span class="t-g"></span></div>
+            <span class="editor-fname" id="editor-fname">always/core-c-rules.mdc</span>
+          </div>
+          <div class="editor-body">
+            <div class="code-content" id="code-content"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="slide-footer">
+    <button class="nav-btn" id="btn-prev" onclick="go(current-1)">← Prev</button>
+    <button class="nav-btn primary" id="btn-next" onclick="go(current+1)">Next →</button>
+  </footer>
+
+  <div id="shortcut-overlay" onclick="if(event.target===this)toggleShortcuts()">
+    <div class="shortcut-panel">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcut-row"><span>Next slide</span><div><span class="key">→</span><span class="key">↓</span></div></div>
+      <div class="shortcut-row"><span>Previous slide</span><div><span class="key">←</span><span class="key">↑</span></div></div>
+      <div class="shortcut-row"><span>Jump to slide</span><div><span class="key">Click dot</span></div></div>
+      <div class="shortcut-row"><span>This overlay</span><div><span class="key">?</span></div></div>
+      <div class="shortcut-row"><span>Close</span><div><span class="key">Esc</span></div></div>
+      <div style="margin-top:18px"><button class="nav-btn" onclick="toggleShortcuts()" style="width:100%;justify-content:center">Close</button></div>
+    </div>
+  </div>
+
+  <!-- ✏️ Fill-in drawer -->
+  <div class="form-drawer" id="form-drawer">
+    <div class="form-drawer-body">
+      <div class="form-drawer-inner">
+        <p class="form-drawer-hint">Defaults loaded — edit, clear, or restore per field</p>
+        <div class="form-row form-row-2">
+          <div class="form-field">
+            <label class="form-label">Always-apply coding rules</label>
+            <textarea id="f-always" class="form-textarea" rows="2" placeholder="e.g. C only, naming prefixes, early exits, build to verify" oninput="saveField('alwaysRules',this.value); updateFillIndicator();"></textarea>
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="useDefault('alwaysRules', document.getElementById('f-always'))">Use default</button>
+              <button type="button" class="btn-field-action" onclick="clearField('alwaysRules', document.getElementById('f-always'))">Clear</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">What must NEVER happen?</label>
+            <textarea id="f-never" class="form-textarea" rows="2" placeholder="e.g. Never use C++, never modify ADK base, never edit generated files" oninput="saveField('neverRules',this.value); updateFillIndicator();"></textarea>
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="useDefault('neverRules', document.getElementById('f-never'))">Use default</button>
+              <button type="button" class="btn-field-action" onclick="clearField('neverRules', document.getElementById('f-never'))">Clear</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-field" style="margin-top:4px">
+          <label class="form-label">File-pattern specific rules</label>
+          <div class="dynamic-rows" id="pattern-rows"></div>
+          <button class="btn-add-row" onclick="addPatternRow()">+ Add pattern rule</button>
+        </div>
+      </div>
+    </div>
+    <div class="form-drawer-tab-wrap">
+      <button class="form-drawer-tab" onclick="toggleDrawer()">
+        <span class="filled-dot" id="filled-dot"></span>
+        ✏️ Your Rules
+        <span class="drawer-arrow" id="drawer-arrow">▲</span>
+      </button>
+    </div>
+  </div>
+
+  <script src="nav.js"></script>
+  <script src="workshop-defaults.js"></script>
+  <script>
+    function updateFillIndicator() {
+      const a = getAnswers();
+      let patFilled = false;
+      try {
+        const rows = typeof a.filePatternRules === 'string' ? JSON.parse(a.filePatternRules || '[]') : (a.filePatternRules || []);
+        patFilled = rows.some(r => r.pattern || r.rule);
+      } catch { patFilled = false; }
+      document.getElementById('filled-dot').classList.toggle('show', !!(a.alwaysRules || a.neverRules || patFilled));
+    }
+    function getPatternRows() {
+      const a = getAnswers();
+      if (Array.isArray(a.filePatternRules)) return a.filePatternRules;
+      try { return JSON.parse(a.filePatternRules || '[]'); } catch { return []; }
+    }
+    function escAttr(s) { return (s || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;'); }
+    function renderPatternRows() {
+      const rows = getPatternRows();
+      const container = document.getElementById('pattern-rows');
+      container.innerHTML = '';
+      rows.forEach((r, i) => {
+        const div = document.createElement('div');
+        div.className = 'dynamic-row';
+        div.innerHTML = `<input class="form-input" placeholder="**/*.c" value="${escAttr(r.pattern)}" oninput="updatePatternField(${i},'pattern',this.value)"><input class="form-input" placeholder="Rule for this pattern..." value="${escAttr(r.rule)}" oninput="updatePatternField(${i},'rule',this.value)"><button class="btn-del-row" onclick="deletePatternRow(${i})">×</button>`;
+        container.appendChild(div);
+      });
+    }
+    function savePatternRows(rows) {
+      saveField('filePatternRules', JSON.stringify(rows));
+      updateFillIndicator();
+    }
+    function addPatternRow() {
+      const rows = getPatternRows();
+      rows.push({ pattern: '', rule: '' });
+      savePatternRows(rows);
+      renderPatternRows();
+    }
+    function deletePatternRow(idx) {
+      const rows = getPatternRows();
+      rows.splice(idx, 1);
+      savePatternRows(rows);
+      renderPatternRows();
+    }
+    function updatePatternField(idx, key, value) {
+      const rows = getPatternRows();
+      if (!rows[idx]) rows[idx] = {};
+      rows[idx][key] = value;
+      savePatternRows(rows);
+    }
+    function toggleDrawer() {
+      toggleDrawerBase('form-drawer', 'drawer-arrow');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      const firstVisit = !localStorage.getItem(DEFAULTS_LOADED_KEY);
+      initWorkshopFields({
+        alwaysRules: 'f-always',
+        neverRules: 'f-never',
+      }, updateFillIndicator);
+      if (firstVisit) {
+        const def = getDefault('filePatternRules');
+        if (Array.isArray(def) && def.length) {
+          saveField('filePatternRules', JSON.stringify(def));
+        }
+      }
+      renderPatternRows();
+    });
+  </script>
+  <script>
+    const TABS = [
+      {
+        label: 'always',
+        fname: 'always/core-c-rules.mdc',
+        code: [
+          [['tok-dim','---']],
+          [['tok-key','description'],['tok-dim',': '],['tok-val','Core C language rules, naming, code style, workflow (~/.cursor/rules/always/)']],
+          [['tok-key','alwaysApply'],['tok-dim',':   '],['tok-ok','true']],
+          [['tok-dim','---']],
+          [],
+          [['tok-head','# Core C Development Rules']],
+          [],
+          [['tok-head','## Language: ONLY C, NO C++']],
+          [['tok-md','C99/C11 only. No C++ classes, templates, lambdas, '],['tok-str','new'],['tok-md','/'],['tok-str','delete'],['tok-md',', or C++ headers.']],
+          [],
+          [['tok-head','## Naming Conventions']],
+          [['tok-md','Functions/variables: '],['tok-str','snake_case'],['tok-md',' with module prefix ('],['tok-str','bt_ic_'],['tok-md',', '],['tok-str','ic_sena_'],['tok-md',').']],
+          [['tok-md','Macros/constants: '],['tok-str','UPPER_CASE'],['tok-md','. Internal functions: '],['tok-str','static'],['tok-md','.']],
+          [],
+          [['tok-head','## Code Structure']],
+          [['tok-md','Short functions, early exits, one logical step at a time.']],
+          [['tok-md','Macro-based logging with empty fallback when disabled.']],
+          [],
+          [['tok-head','## Workflow Constraints']],
+          [['tok-err','Never'],['tok-md',' make commits — user handles version control.']],
+          [['tok-err','Never'],['tok-md',' modify ADK base code — extend via application only.']],
+          [['tok-md','Always build to verify before considering a step done.']],
+        ]
+      },
+      {
+        label: 'auto',
+        fname: 'qcc3095-platform.mdc',
+        code: [
+          [['tok-dim','---']],
+          [['tok-key','description'],['tok-dim',': '],['tok-val','QCC3095 platform — ADK, FreeRTOS, CM library (Cardo_Products/.cursor/rules/)']],
+          [['tok-key','globs'],['tok-dim',':       '],['tok-str','qcc3095/**/*.c, qcc3095/**/*.h']],
+          [['tok-key','alwaysApply'],['tok-dim',': '],['tok-val','false']],
+          [['tok-dim','---']],
+          [],
+          [['tok-head','# QCC3095 Platform Rules']],
+          [],
+          [['tok-md','Chip: QCC3095 · OS: FreeRTOS · Audio: Qualcomm ADK/Kymera · BT: Synergy CM.']],
+          [['tok-md','Real-time: 48 kHz audio, <20 ms latency. Limited SRAM — careful memory management.']],
+          [],
+          [['tok-head','## Key Directories']],
+          [['tok-md','  '],['tok-str','qcc3095/adk/'],['tok-md',' — Qualcomm ADK (do not modify)']],
+          [['tok-md','  '],['tok-str','qcc3095/cardo/src/'],['tok-md',' — Cardo application code']],
+          [['tok-md','  '],['tok-str','qcc3095/cardo/src/ic_protocols/'],['tok-md',' — Sena, Apollo protocols']],
+          [],
+          [['tok-head','## FreeRTOS Patterns']],
+          [['tok-md','Tasks via '],['tok-str','TaskData'],['tok-md',' + handler switch on '],['tok-str','MessageId'],['tok-md','.']],
+          [['tok-md','Send with '],['tok-str','MessageSend()'],['tok-md','; register CM via '],['tok-str','CmRegisterReqSend()'],['tok-md','.']],
+          [],
+          [['tok-head','## CM Primitives']],
+          [['tok-md','SLC: '],['tok-str','CSR_BT_CM_SLC_CONNECT_IND'],['tok-md',', '],['tok-str','..._CFM'],['tok-md',', '],['tok-str','..._DISCONNECT_IND']],
+        ]
+      },
+      {
+        label: 'ado',
+        fname: 'always/azure-devops.mdc',
+        code: [
+          [['tok-dim','---']],
+          [['tok-key','description'],['tok-dim',': '],['tok-val','Cardo Azure DevOps org, project, MCP gate, PR scope (~/.cursor/rules/always/)']],
+          [['tok-key','alwaysApply'],['tok-dim',':   '],['tok-ok','true']],
+          [['tok-dim','---']],
+          [],
+          [['tok-head','# Cardo Azure DevOps']],
+          [],
+          [['tok-md','MCP server: '],['tok-str','user-azure-devops'],['tok-md',', project '],['tok-str','Cardo'],['tok-md',', repo '],['tok-str','Cardo_Products']],
+          [['tok-md','Org: '],['tok-str','cardovsts'],['tok-md',' · team: '],['tok-str','SOFTWARE'],['tok-md',' · always pass '],['tok-str','project: "Cardo"'],['tok-md',' to MCP tools.']],
+          [],
+          [['tok-head','## Mandatory work item fetch']],
+          [['tok-md','On bug/task/WI mention: '],['tok-str','wit_get_work_item'],['tok-md',' + comments if '],['tok-str','System.CommentCount > 0'],['tok-md','.']],
+          [['tok-err','Forbidden:'],['tok-md',' summarizing repro/expected/actual without MCP fetch.']],
+          [],
+          [['tok-head','## PR scope']],
+          [['tok-md','One ADO work item per PR. Firmware PRs use '],['tok-str','repo_*'],['tok-md',' MCP, not '],['tok-str','gh'],['tok-md','.']],
+          [],
+          [['tok-head','## Skills & commands']],
+          [['tok-md','/start-wi → '],['tok-str','ado-start-work-item'],['tok-md',' · /finish-wi → '],['tok-str','ado-finish-work-item'],['tok-md',' · /pr-triage → '],['tok-str','ado-pr-comment-advisor']],
+        ]
+      },
+      {
+        label: 'manual',
+        fname: 'bt-intercom-core.mdc',
+        code: [
+          [['tok-dim','---']],
+          [['tok-key','description'],['tok-dim',': '],['tok-val','Bluetooth intercom core — state, riders, protocol adapters (Cardo_Products/.cursor/rules/)']],
+          [['tok-key','globs'],['tok-dim',':       '],['tok-str','src/ic/bt_intercom_*']],
+          [['tok-key','alwaysApply'],['tok-dim',': '],['tok-val','false']],
+          [['tok-dim','---']],
+          [],
+          [['tok-head','# Bluetooth Intercom Core Module Rules']],
+          [],
+          [['tok-md','Central coordination for intercom: rider registration, connection state, protocol adapters.']],
+          [],
+          [['tok-head','## Rider Management']],
+          [['tok-md','Rider IDs: '],['tok-str','bt_ic_rider_a'],['tok-md',', '],['tok-str','bt_ic_rider_b'],['tok-md','. Register via '],['tok-str','bt_intercom_core_register_rider()'],['tok-md','.']],
+          [['tok-err','Always'],['tok-md',' check '],['tok-str','IS_RIDER_VALID(rider)'],['tok-md',' before using rider index.']],
+          [],
+          [['tok-head','## Protocol Adapter Pattern']],
+          [['tok-md','Protocols register '],['tok-str','bt_ic_protocol_adapter_t'],['tok-md',' function pointers:']],
+          [['tok-md','  '],['tok-str','connect_slc'],['tok-md',', '],['tok-str','disconnect_slc'],['tok-md',', '],['tok-str','connect_ic'],['tok-md',', '],['tok-str','disconnect_ic']],
+          [['tok-md','Notify core via '],['tok-str','bt_intercom_core_protocol_event_handler()'],['tok-md','.']],
+          [],
+          [['tok-head','## Related rules']],
+          [['tok-md','Pairing: '],['tok-str','bt-intercom-pairing.mdc'],['tok-md',' · Protocols: '],['tok-str','bt-intercom-protocols.mdc']],
+        ]
+      }
+    ];
+
+    const fnames = ['always/core-c-rules.mdc','qcc3095-platform.mdc','always/azure-devops.mdc','bt-intercom-core.mdc'];
+    let activeTab = 0;
+
+    function renderCode(idx) {
+      return TABS[idx].code.map(line => {
+        if (!line.length) return '';
+        return line.map(([cls, txt]) =>
+          cls ? `<span class="${cls}">${escHtml(txt)}</span>` : escHtml(txt)
+        ).join('');
+      }).join('\n');
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function switchTab(idx, fromFile) {
+      if (idx === activeTab && !fromFile) return;
+      activeTab = idx;
+      const cc = document.getElementById('code-content');
+      cc.classList.add('fade');
+      setTimeout(() => {
+        cc.innerHTML = renderCode(idx);
+        document.getElementById('active-fname').textContent = fnames[idx];
+        document.getElementById('editor-fname').textContent = fnames[idx];
+        cc.classList.remove('fade');
+      }, 120);
+      document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === idx));
+      document.querySelectorAll('.tree-file').forEach((f, i) => f.classList.toggle('active', i === idx));
+    }
+
+    function selectFile(idx) { switchTab(idx, true); }
+
+    // Init
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('code-content').innerHTML = renderCode(0);
+      document.getElementById('tf-0').classList.add('active');
+    });
+  </script>
+</body>
+</html>

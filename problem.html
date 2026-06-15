@@ -1,0 +1,224 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Problem — Cardo AI Workshop</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; margin-top: 16px; }
+    .col {
+      padding: 24px 26px; border-radius: var(--r); display: flex; flex-direction: column; gap: 10px;
+      border: 1px solid var(--border); backdrop-filter: blur(14px);
+    }
+    .col-bad  { background: linear-gradient(160deg, rgba(252,165,165,0.08) 0%, var(--panel) 60%); border-color: var(--bad-border); }
+    .col-good { background: linear-gradient(160deg, rgba(110,231,183,0.09) 0%, var(--panel) 60%); border-color: var(--good-border); }
+    .col-head { font-family: var(--ff-d); font-size: 15px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+    .col-head.bad  { color: var(--bad); }
+    .col-head.good { color: var(--good); }
+    .row-item { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; }
+    .row-item .ico { font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+    .row-item .txt { color: var(--muted); line-height: 1.5; }
+    .row-item .txt strong { color: var(--text); font-weight: 500; }
+    .def-box {
+      padding: 13px 20px; border-radius: var(--r-sm);
+      background: var(--teal-dim); border: 1px solid var(--teal-border);
+      display: flex; align-items: baseline; gap: 10px;
+      margin-top: 10px;
+    }
+    .def-term {
+      font-family: var(--ff-m); font-size: 12px; color: var(--teal);
+      text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; flex-shrink: 0;
+    }
+    .def-body { font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+    .def-body strong { color: var(--text); font-weight: 500; }
+    .divider {
+      position: absolute; left: 50%; top: 78px; bottom: 64px;
+      width: 1px; background: linear-gradient(180deg, transparent, var(--border) 20%, var(--border) 80%, transparent);
+      pointer-events: none;
+    }
+    .vs-badge {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%);
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--bg); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--ff-m); font-size: 11px; color: var(--muted);
+      z-index: 2; pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="progress-bar"></div>
+
+  <header class="slide-header">
+    <div class="header-logo"><img src="cardo-logo.png" alt="Cardo Systems"></div>
+    <div class="header-dots" id="dots"></div>
+    <div class="header-right">
+      <span class="header-counter" id="counter"></span>
+      <button class="help-btn" onclick="toggleShortcuts()">?</button>
+    </div>
+  </header>
+
+  <main class="slide" style="position:relative">
+    <div class="tag anim d0">The Problem</div>
+    <h2 class="anim d1">The cost of ad-hoc prompting</h2>
+
+    <div class="def-box anim d2">
+      <span class="def-term">Ad-hoc prompting</span>
+      <span class="def-body">Typing instructions directly into the chat <strong>each session, from scratch</strong> — no persistent rules, no shared context, no structure. Every conversation starts cold and ends forgotten.</span>
+    </div>
+
+    <div class="split" style="position:relative;margin-top:12px">
+      <!-- left panel — slides in from left -->
+      <div class="col col-bad anim d3" style="animation-name:slideInLeft">
+        <div class="col-head bad">✗ &nbsp;Without Structure</div>
+        <div class="row-item">
+          <span class="ico">🎲</span>
+          <span class="txt"><strong>Inconsistent outputs</strong> — same question, different answers every session</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">🕳️</span>
+          <span class="txt"><strong>Lost context</strong> — you re-explain the codebase from scratch every time</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">🔄</span>
+          <span class="txt"><strong>AI ignores conventions</strong> — naming, architecture, safety patterns all drift</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">🔁</span>
+          <span class="txt"><strong>Repeated review failures</strong> — same AI mistakes caught sprint after sprint</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">🧠</span>
+          <span class="txt"><strong>Knowledge stays tribal</strong> — how you prompt well never reaches the team</span>
+        </div>
+      </div>
+
+      <!-- right panel — slides in from right -->
+      <div class="col col-good anim d4" style="animation-name:slideInRight">
+        <div class="col-head good">✓ &nbsp;With Structure</div>
+        <div class="row-item">
+          <span class="ico">🎯</span>
+          <span class="txt"><strong>Predictable, repeatable results</strong> — everyone gets the same quality baseline</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">🧩</span>
+          <span class="txt"><strong>Context encoded in rules</strong> — constraints are always present, never forgotten</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">✅</span>
+          <span class="txt"><strong>Conventions enforced automatically</strong> — naming, arch, safety applied on every prompt</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">🔍</span>
+          <span class="txt"><strong>Reviews catch new issues</strong> — not the same AI-generated mistakes on repeat</span>
+        </div>
+        <div class="row-item">
+          <span class="ico">📢</span>
+          <span class="txt"><strong>Knowledge is shared</strong> — your best prompting habits become team habits</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="vs-badge">vs</div>
+    </div>
+
+    <div class="meter-wrap anim d6">
+      <div class="meter-meta">
+        <span class="meter-label">AI Usage Maturity</span>
+        <span class="meter-pct" id="m-pct">28%</span>
+      </div>
+      <div class="meter-track"><div class="meter-fill" id="m-fill" style="width:28%"></div></div>
+      <div style="font-size:11px;color:var(--muted);margin-top:6px;font-family:var(--ff-m)">Ad-hoc prompting — you are here</div>
+    </div>
+  </main>
+
+  <footer class="slide-footer">
+    <button class="nav-btn" id="btn-prev" onclick="go(current-1)">← Prev</button>
+    <button class="nav-btn primary" id="btn-next" onclick="go(current+1)">Next →</button>
+  </footer>
+
+  <div id="shortcut-overlay" onclick="if(event.target===this)toggleShortcuts()">
+    <div class="shortcut-panel">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcut-row"><span>Next slide</span><div><span class="key">→</span><span class="key">↓</span></div></div>
+      <div class="shortcut-row"><span>Previous slide</span><div><span class="key">←</span><span class="key">↑</span></div></div>
+      <div class="shortcut-row"><span>Jump to slide</span><div><span class="key">Click dot</span></div></div>
+      <div class="shortcut-row"><span>This overlay</span><div><span class="key">?</span></div></div>
+      <div class="shortcut-row"><span>Close</span><div><span class="key">Esc</span></div></div>
+      <div style="margin-top:18px"><button class="nav-btn" onclick="toggleShortcuts()" style="width:100%;justify-content:center">Close</button></div>
+    </div>
+  </div>
+
+  <!-- ✏️ Fill-in drawer -->
+  <div class="form-drawer" id="form-drawer">
+    <div class="form-drawer-body">
+      <div class="form-drawer-inner">
+        <p class="form-drawer-hint">Defaults loaded — edit, clear, or restore per field</p>
+        <div class="form-row form-row-1">
+          <div class="form-field">
+            <label class="form-label">Your project / tech stack</label>
+            <input id="f-stack" class="form-input" data-field="stack" placeholder="e.g. Embedded C, QCC3095 Bluetooth firmware" oninput="saveField('stack',this.value); updateFillIndicator();">
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="useDefault('stack', document.getElementById('f-stack'))">Use default</button>
+              <button type="button" class="btn-field-action" onclick="clearField('stack', document.getElementById('f-stack'))">Clear</button>
+            </div>
+          </div>
+        </div>
+        <div class="form-row form-row-2">
+          <div class="form-field">
+            <label class="form-label">What does AI currently get wrong?</label>
+            <textarea id="f-pain" class="form-textarea" data-field="painPoints" rows="2" placeholder="e.g. Ignores naming conventions, suggests RTOS-unsafe malloc" oninput="saveField('painPoints',this.value); updateFillIndicator();"></textarea>
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="useDefault('painPoints', document.getElementById('f-pain'))">Use default</button>
+              <button type="button" class="btn-field-action" onclick="clearField('painPoints', document.getElementById('f-pain'))">Clear</button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">What repeated workflow would you automate?</label>
+            <textarea id="f-workflow" class="form-textarea" data-field="repeatedWorkflow" rows="2" placeholder="e.g. Every bug: grep symbols, check git log, read adjacent headers" oninput="saveField('repeatedWorkflow',this.value); updateFillIndicator();"></textarea>
+            <div class="field-actions">
+              <button type="button" class="btn-field-action" onclick="useDefault('repeatedWorkflow', document.getElementById('f-workflow'))">Use default</button>
+              <button type="button" class="btn-field-action" onclick="clearField('repeatedWorkflow', document.getElementById('f-workflow'))">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="form-drawer-tab-wrap">
+      <button class="form-drawer-tab" onclick="toggleDrawer()">
+        <span class="filled-dot" id="filled-dot"></span>
+        ✏️ Your Context
+        <span class="drawer-arrow" id="drawer-arrow">▲</span>
+      </button>
+    </div>
+  </div>
+
+  <script src="nav.js"></script>
+  <script src="workshop-defaults.js"></script>
+  <script>
+    // Animate meter on load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('m-fill').style.width = '28%';
+      }, 500);
+    });
+
+    function updateFillIndicator() {
+      const a = getAnswers();
+      document.getElementById('filled-dot').classList.toggle('show', !!(a.stack || a.painPoints || a.repeatedWorkflow));
+    }
+    function toggleDrawer() {
+      const open = toggleDrawerBase('form-drawer', 'drawer-arrow');
+    }
+    document.addEventListener('DOMContentLoaded', () => {
+      initWorkshopFields({
+        stack: 'f-stack',
+        painPoints: 'f-pain',
+        repeatedWorkflow: 'f-workflow',
+      }, updateFillIndicator);
+    });
+  </script>
+</body>
+</html>

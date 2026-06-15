@@ -1,0 +1,171 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cursor AI Workshop — Cardo Systems</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .slide--title {
+      justify-content: center;
+      align-items: center;
+    }
+    .title-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .counter-row {
+      display: flex; align-items: flex-end; justify-content: center; gap: 0; line-height: 1;
+      margin: 10px 0 6px;
+    }
+    .counter-num {
+      font-family: var(--ff-d);
+      font-size: clamp(100px, 16vw, 176px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: var(--teal);
+      line-height: 1;
+      text-shadow: 0 0 80px var(--teal-glow);
+      font-feature-settings: "zero" 1;
+    }
+    .counter-pct {
+      font-family: var(--ff-d);
+      font-size: clamp(44px, 7vw, 80px);
+      font-weight: 700;
+      color: var(--teal-lt);
+      margin-bottom: 14px;
+      letter-spacing: -0.04em;
+    }
+    .hero-headline {
+      font-family: var(--ff-d);
+      font-size: clamp(26px, 3.2vw, 42px);
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: -0.03em;
+      margin-bottom: 14px;
+      line-height: 1.15;
+    }
+    .hero-headline .hero-accent { color: var(--text); }
+    .subtitle {
+      font-family: var(--ff-d);
+      font-size: clamp(17px, 2.2vw, 26px);
+      font-weight: 600;
+      color: var(--text);
+      letter-spacing: -0.02em;
+      margin-bottom: 28px;
+      max-width: 34ch;
+    }
+    .subtitle span { color: var(--teal); }
+    .btn-row { display: flex; gap: 12px; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 28px; border-radius: var(--r-pill);
+      background: var(--teal); border: none; color: #041320;
+      font-family: var(--ff-b); font-size: 15px; font-weight: 700; cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 8px 32px var(--teal-glow);
+    }
+    .btn-primary:hover { background: var(--teal-lt); box-shadow: 0 8px 48px var(--teal-glow); transform: translateY(-2px); }
+    .btn-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 13px 24px; border-radius: var(--r-pill);
+      background: var(--panel); border: 1px solid var(--border);
+      color: var(--muted); font-family: var(--ff-b); font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: all 0.2s; backdrop-filter: blur(12px);
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--teal-border); background: var(--teal-dim); }
+    .presenter-note {
+      position: absolute; bottom: 76px; right: 60px;
+      font-family: var(--ff-m); font-size: 11px; color: rgba(122,148,188,0.55);
+      letter-spacing: 0.06em;
+    }
+    .pre-label {
+      font-family: var(--ff-d);
+      font-size: clamp(22px, 3vw, 36px);
+      color: var(--text);
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      margin-bottom: 2px;
+      max-width: 18ch;
+      line-height: 1.2;
+    }
+  </style>
+</head>
+<body>
+  <div class="orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div id="progress-bar"></div>
+
+  <header class="slide-header">
+    <div class="header-logo"><img src="cardo-logo.png" alt="Cardo Systems"></div>
+    <div class="header-dots" id="dots"></div>
+    <div class="header-right">
+      <span class="header-counter" id="counter"></span>
+      <button class="help-btn" onclick="toggleShortcuts()">?</button>
+    </div>
+  </header>
+
+  <main class="slide slide--title" style="position:relative">
+    <div class="title-hero">
+      <div class="tag anim d0">Cursor AI &nbsp;·&nbsp; Internal Workshop &nbsp;·&nbsp; Cardo Systems</div>
+      <p class="pre-label anim d1">Are you currently using…</p>
+      <div class="counter-row anim d2">
+        <span class="counter-num" id="counter-num">0</span>
+        <span class="counter-pct">%</span>
+      </div>
+      <h1 class="hero-headline anim d3">of <span class="hero-accent">Cursor's capabilities?</span></h1>
+      <div class="subtitle anim d4"><span>Rules · Skills · Commands</span> — unlock the other 70%</div>
+      <div class="btn-row anim d5">
+        <button class="btn-primary" onclick="go(1)">Start &nbsp;→</button>
+        <button class="btn-secondary" onclick="go(4)">Jump to demo</button>
+      </div>
+    </div>
+    <div class="presenter-note anim d7">Alon Kwart &nbsp;·&nbsp; June 2026</div>
+  </main>
+
+  <footer class="slide-footer">
+    <button class="nav-btn" id="btn-prev" onclick="go(current-1)" disabled>← Prev</button>
+    <button class="nav-btn primary" id="btn-next" onclick="go(current+1)">Next →</button>
+  </footer>
+
+  <div id="shortcut-overlay" onclick="if(event.target===this)toggleShortcuts()">
+    <div class="shortcut-panel">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcut-row"><span>Next slide</span><div><span class="key">→</span><span class="key">↓</span></div></div>
+      <div class="shortcut-row"><span>Previous slide</span><div><span class="key">←</span><span class="key">↑</span></div></div>
+      <div class="shortcut-row"><span>Jump to slide</span><div><span class="key">Click dot</span></div></div>
+      <div class="shortcut-row"><span>This overlay</span><div><span class="key">?</span></div></div>
+      <div class="shortcut-row"><span>Close</span><div><span class="key">Esc</span></div></div>
+      <div style="margin-top:18px">
+        <button class="nav-btn" onclick="toggleShortcuts()" style="width:100%;justify-content:center">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="nav.js"></script>
+  <script>
+    // Animated counter: 0 → 30
+    function runCounter() {
+      const el = document.getElementById('counter-num');
+      const end = 30, dur = 1800;
+      const t0 = performance.now();
+      function tick(now) {
+        const p = Math.min((now - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(eased * end);
+        if (p < 1) requestAnimationFrame(tick);
+      }
+      requestAnimationFrame(tick);
+    }
+    window.addEventListener('load', () => setTimeout(runCounter, 700));
+  </script>
+</body>
+</html>

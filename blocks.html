@@ -1,0 +1,482 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Building Blocks — Cardo AI Workshop</title>
+  <link rel="stylesheet" href="shared.css">
+  <style>
+    .slide { overflow-y: auto; min-height: 0; }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      flex: 1;
+      min-height: 0;
+      margin-top: 18px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-slot {
+      position: relative;
+      min-height: 0;
+      align-self: stretch;
+    }
+
+    .card {
+      padding: 28px 26px;
+      border-radius: var(--r);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      height: 100%;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1),
+                  box-shadow 0.3s, border-color 0.3s, background 0.3s;
+      position: relative;
+      overflow: hidden;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transform-origin: center center;
+      will-change: transform;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: var(--r);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .card.is-active {
+      border-color: var(--teal-border);
+      box-shadow: 0 0 24px rgba(0,153,204,0.14);
+    }
+    .card.is-active::before {
+      opacity: 1;
+      background: linear-gradient(160deg, rgba(0,153,204,0.08) 0%, transparent 60%);
+    }
+    .card.pinned {
+      border-color: var(--teal);
+      box-shadow: 0 0 28px rgba(0,153,204,0.2);
+    }
+
+    /* Floating enlarged copy — original card stays in place */
+    .card-float {
+      position: fixed;
+      z-index: 80;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transition: opacity 0.22s, visibility 0.22s;
+      transform: translate(-50%, -50%);
+    }
+    .card-float.visible {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+    }
+    .card-float-inner {
+      padding: 28px 26px;
+      border-radius: var(--r);
+      background: rgba(4, 10, 22, 0.98);
+      border: 1px solid var(--teal-border);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      overflow: visible;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 16px 56px rgba(0,0,0,0.55), 0 0 36px var(--teal-glow);
+      transform: scale(1.14);
+      transform-origin: center center;
+      cursor: pointer;
+    }
+    .card-float.pinned .card-float-inner {
+      border-color: var(--teal);
+      box-shadow: 0 16px 56px rgba(0,0,0,0.55), 0 0 44px rgba(0,153,204,0.35);
+    }
+
+    .card-icon { font-size: 36px; line-height: 1; }
+    .card-title { font-family: var(--ff-d); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); }
+    .card-desc { font-size: 14px; color: var(--muted); line-height: 1.6; flex: 1; }
+    .card-items { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
+    .card-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .card-item .dot-mark { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); flex-shrink: 0; }
+    .card-item .item-txt { color: var(--muted); }
+    .card-item .item-code {
+      font-family: var(--ff-m);
+      font-size: 12px;
+      color: var(--teal);
+      background: var(--teal-dim);
+      padding: 2px 8px;
+      border-radius: var(--r-pill);
+      border: 1px solid var(--teal-border);
+    }
+    .card-num {
+      position: absolute;
+      top: 22px;
+      right: 24px;
+      font-family: var(--ff-d);
+      font-size: 48px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      color: rgba(255,255,255,0.04);
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .anim.card { animation-name: fadeUp !important; }
+    .c1 { animation-delay: 0.12s; }
+    .c2 { animation-delay: 0.22s; }
+    .c3 { animation-delay: 0.32s; }
+
+    /* ADO example — always visible below cards */
+    .efficiency-panel {
+      margin-top: 14px;
+      padding: 16px 20px;
+      border-radius: var(--r-sm);
+      background: rgba(4,7,16,0.85);
+      border: 1px solid var(--teal-border);
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+    .efficiency-title {
+      font-family: var(--ff-d);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--teal);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+    .efficiency-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .eff-col {
+      padding: 12px 14px;
+      border-radius: var(--r-sm);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+    }
+    .eff-col.active {
+      border-color: var(--teal);
+      background: var(--teal-dim);
+      box-shadow: 0 0 20px rgba(0,153,204,0.15);
+    }
+    .eff-col-label {
+      font-family: var(--ff-m);
+      font-size: 10px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 6px;
+    }
+    .eff-col-code {
+      font-family: var(--ff-m);
+      font-size: 11px;
+      color: var(--teal);
+      line-height: 1.5;
+      margin-bottom: 6px;
+    }
+    .eff-col-desc { font-size: 12px; color: var(--muted); line-height: 1.45; }
+    .efficiency-close {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 12px;
+      line-height: 1.5;
+    }
+
+    .bottom-hint {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      margin-top: 10px;
+      letter-spacing: 0.04em;
+      opacity: 0.6;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="orbs"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="orb orb-3"></div></div>
+  <div id="progress-bar"></div>
+
+  <header class="slide-header">
+    <div class="header-logo"><img src="cardo-logo.png" alt="Cardo Systems"></div>
+    <div class="header-dots" id="dots"></div>
+    <div class="header-right">
+      <span class="header-counter" id="counter"></span>
+      <button class="help-btn" onclick="toggleShortcuts()">?</button>
+    </div>
+  </header>
+
+  <main class="slide">
+    <div class="tag anim d0">Building Blocks</div>
+    <h2 class="anim d1">Three tools that change everything</h2>
+    <p class="anim d2" style="margin-top:4px">Each one encodes a layer of knowledge that Cursor uses automatically.</p>
+
+    <div class="cards" id="cards">
+      <div class="card-slot" data-card="0">
+        <div class="card anim c1" data-card="0" tabindex="0">
+          <span class="card-num">01</span>
+          <div class="card-icon">📏</div>
+          <div class="card-title">Rules</div>
+          <p class="card-desc">Encode your codebase's constraints once. Cursor follows them on every prompt, forever.</p>
+          <div class="card-items">
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Architecture boundaries</span></div>
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Coding style &amp; naming</span></div>
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Safety constraints</span></div>
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Testing expectations</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-slot" data-card="1">
+        <div class="card anim c2" data-card="1" tabindex="0">
+          <span class="card-num">02</span>
+          <div class="card-icon">🧩</div>
+          <div class="card-title">Skills</div>
+          <p class="card-desc">Reusable expert playbooks. Package how <em>you</em> approach a problem so the whole team benefits.</p>
+          <div class="card-items">
+            <div class="card-item"><span class="item-code">/investigate</span></div>
+            <div class="card-item"><span class="item-code">/safe-refactor</span></div>
+            <div class="card-item"><span class="item-code">/review-pr</span></div>
+            <div class="card-item"><span class="item-code">/write-tests</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-slot" data-card="2">
+        <div class="card anim c3" data-card="2" tabindex="0">
+          <span class="card-num">03</span>
+          <div class="card-icon">⚡</div>
+          <div class="card-title">Commands</div>
+          <p class="card-desc">One trigger, full structured workflow. Routine follows rules, skill runs, structured output delivered.</p>
+          <div class="card-items">
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Consistent, predictable output</span></div>
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Team-wide shared habits</span></div>
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Auditable, reviewable results</span></div>
+            <div class="card-item"><span class="dot-mark"></span><span class="item-txt">Zero context overhead</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-float" id="card-float" aria-hidden="true"></div>
+
+    <div class="efficiency-panel anim d6" id="efficiency-panel">
+      <div class="efficiency-title">Context efficiency in practice — ADO lifecycle</div>
+      <div class="efficiency-cols">
+        <div class="eff-col" data-card="0">
+          <div class="eff-col-label">Rules</div>
+          <div class="eff-col-code">azure-devops.mdc</div>
+          <div class="eff-col-desc">Org, MCP gate, field names — agent stops rediscovering ADO setup every session.</div>
+        </div>
+        <div class="eff-col" data-card="1">
+          <div class="eff-col-label">Skill</div>
+          <div class="eff-col-code">ado-start-work-item</div>
+          <div class="eff-col-desc">Branch, link WI, baseline build — agent follows your checklist instead of improvising.</div>
+        </div>
+        <div class="eff-col" data-card="2">
+          <div class="eff-col-label">Command</div>
+          <div class="eff-col-code">/start-wi 48231</div>
+          <div class="eff-col-desc">One line runs the full workflow — rules already applied, no re-explaining.</div>
+        </div>
+      </div>
+      <p class="efficiency-close">Rules stop the agent from rediscovering ADO. Skills stop it from reinventing your checklist. Commands stop you from re-explaining.</p>
+    </div>
+
+    <p class="bottom-hint anim d7">Hover each card · Click to pin · Next slide dives into Rules</p>
+  </main>
+
+  <footer class="slide-footer">
+    <button class="nav-btn" id="btn-prev" onclick="go(current-1)">← Prev</button>
+    <button class="nav-btn primary" id="btn-next" onclick="go(current+1)">Next →</button>
+  </footer>
+
+  <div id="shortcut-overlay" onclick="if(event.target===this)toggleShortcuts()">
+    <div class="shortcut-panel">
+      <h3>Keyboard Shortcuts</h3>
+      <div class="shortcut-row"><span>Next slide</span><div><span class="key">→</span><span class="key">↓</span></div></div>
+      <div class="shortcut-row"><span>Previous slide</span><div><span class="key">←</span><span class="key">↑</span></div></div>
+      <div class="shortcut-row"><span>Jump to slide</span><div><span class="key">Click dot</span></div></div>
+      <div class="shortcut-row"><span>This overlay</span><div><span class="key">?</span></div></div>
+      <div class="shortcut-row"><span>Close</span><div><span class="key">Esc</span></div></div>
+      <div style="margin-top:18px"><button class="nav-btn" onclick="toggleShortcuts()" style="width:100%;justify-content:center">Close</button></div>
+    </div>
+  </div>
+
+  <script src="nav.js"></script>
+  <script>
+    let pinnedIdx = -1;
+    let hoveredIdx = -1;
+
+    function cards() { return document.querySelectorAll('.card[data-card]'); }
+    function effCols() { return document.querySelectorAll('.eff-col[data-card]'); }
+    function slots() { return document.querySelectorAll('.card-slot[data-card]'); }
+
+    function activeIdx() {
+      return pinnedIdx >= 0 ? pinnedIdx : hoveredIdx;
+    }
+
+    function isRelatedToIdx(related, idx) {
+      if (!related) return false;
+      if (related.closest('#card-float') && activeIdx() === idx) return true;
+      return !!(
+        related.closest('.card[data-card="' + idx + '"]') ||
+        related.closest('.card-slot[data-card="' + idx + '"]')
+      );
+    }
+
+    function positionFloat() {
+      var floatEl = document.getElementById('card-float');
+      var cardsEl = document.getElementById('cards');
+      if (!floatEl || !cardsEl || !floatEl.classList.contains('visible')) return;
+
+      var cardsRect = cardsEl.getBoundingClientRect();
+      var slide = document.querySelector('.slide');
+      var slideRect = slide ? slide.getBoundingClientRect() : cardsRect;
+      var centerX = slideRect.left + slideRect.width / 2;
+      var centerY = cardsRect.top + cardsRect.height * 0.22;
+      var firstSlot = slots()[0];
+      var baseWidth = firstSlot ? firstSlot.offsetWidth : 280;
+
+      floatEl.style.left = centerX + 'px';
+      floatEl.style.top = centerY + 'px';
+      floatEl.style.width = baseWidth + 'px';
+    }
+
+    function updateFloat() {
+      var floatEl = document.getElementById('card-float');
+      var idx = activeIdx();
+      if (!floatEl) return;
+
+      if (idx < 0) {
+        floatEl.classList.remove('visible', 'pinned');
+        floatEl.innerHTML = '';
+        floatEl.setAttribute('aria-hidden', 'true');
+        return;
+      }
+
+      var card = cards()[idx];
+      floatEl.innerHTML = '<div class="card-float-inner">' + card.innerHTML + '</div>';
+      floatEl.classList.add('visible');
+      floatEl.classList.toggle('pinned', pinnedIdx === idx);
+      floatEl.setAttribute('aria-hidden', 'false');
+      positionFloat();
+    }
+
+    function updateHighlights() {
+      var idx = activeIdx();
+      cards().forEach(function (card, i) {
+        var active = pinnedIdx === i || (pinnedIdx < 0 && hoveredIdx === i);
+        card.classList.toggle('is-active', active);
+        card.classList.toggle('pinned', pinnedIdx === i);
+      });
+      effCols().forEach(function (col, i) {
+        col.classList.toggle('active', idx === i);
+      });
+      updateFloat();
+    }
+
+    function setHover(idx) {
+      if (pinnedIdx >= 0) return;
+      hoveredIdx = idx;
+      updateHighlights();
+    }
+
+    function clearHover(e, idx) {
+      if (pinnedIdx >= 0) return;
+      if (e && isRelatedToIdx(e.relatedTarget, idx)) return;
+      if (hoveredIdx === idx) {
+        hoveredIdx = -1;
+        updateHighlights();
+      }
+    }
+
+    function setPinned(idx) {
+      pinnedIdx = idx;
+      if (idx < 0) hoveredIdx = -1;
+      updateHighlights();
+    }
+
+    function togglePin(idx) {
+      setPinned(pinnedIdx === idx ? -1 : idx);
+    }
+
+    function unpin() {
+      if (pinnedIdx >= 0) setPinned(-1);
+    }
+
+    function bindHoverZone(el, idx) {
+      el.addEventListener('mouseenter', function () { setHover(idx); });
+      el.addEventListener('mouseleave', function (e) { clearHover(e, idx); });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var floatEl = document.getElementById('card-float');
+
+      cards().forEach(function (card) {
+        var idx = parseInt(card.dataset.card, 10);
+        bindHoverZone(card, idx);
+        card.addEventListener('click', function (e) {
+          e.stopPropagation();
+          togglePin(idx);
+        });
+        card.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            togglePin(idx);
+          }
+        });
+      });
+
+      slots().forEach(function (slot) {
+        bindHoverZone(slot, parseInt(slot.dataset.card, 10));
+      });
+
+      floatEl.addEventListener('mouseleave', function (e) {
+        if (pinnedIdx >= 0) return;
+        if (hoveredIdx < 0) return;
+        if (!isRelatedToIdx(e.relatedTarget, hoveredIdx)) {
+          hoveredIdx = -1;
+          updateHighlights();
+        }
+      });
+      floatEl.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var idx = activeIdx();
+        if (idx >= 0) togglePin(idx);
+      });
+
+      window.addEventListener('resize', positionFloat);
+      window.addEventListener('scroll', positionFloat, true);
+
+      document.addEventListener('click', function (e) {
+        if (pinnedIdx < 0) return;
+        if (e.target.closest('.card[data-card]')) return;
+        if (e.target.closest('#card-float')) return;
+        unpin();
+      });
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var ov = document.getElementById('shortcut-overlay');
+      if (ov && ov.classList.contains('show')) return;
+      if (pinnedIdx >= 0) {
+        e.stopPropagation();
+        unpin();
+      }
+    }, true);
+  </script>
+</body>
+</html>
